@@ -79,8 +79,14 @@ async function inicializarFirebase() {
             firebase.initializeApp(firebaseConfig);
         }
         db = firebase.firestore();
-        storage = firebase.storage();
-        console.log('Firebase conectado ✓');
+        // Storage pode não estar habilitado — tenta inicializar mas não falha
+        try {
+            storage = firebase.storage();
+            console.log('Firebase conectado ✓ (com Storage)');
+        } catch (e) {
+            storage = null;
+            console.log('Firebase conectado ✓ (sem Storage — uploads desabilitados)');
+        }
     } catch (e) {
         console.error('Erro ao inicializar Firebase:', e);
         showToast('Erro ao conectar ao servidor');
@@ -864,8 +870,11 @@ async function salvarFormularioCliente() {
 
     showToast('Salvando dados...');
 
-    // Upload de arquivos para Firebase Storage
-    const arquivosUrls = await uploadArquivosParaStorage(processoAtual.id);
+    // Upload de arquivos para Firebase Storage (se disponível)
+    let arquivosUrls = { iptu: [], docs: [] };
+    if (storage) {
+        arquivosUrls = await uploadArquivosParaStorage(processoAtual.id);
+    }
 
     // Coletar sócios
     const socios = [];
