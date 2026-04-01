@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Regra para a coleção de atos societários
+    match /atos-societarios/{processoId} {
+      // Qualquer pessoa pode ler (necessário para links de cliente)
+      allow read: if true;
+
+      // Qualquer pessoa pode escrever (sem autenticação)
+      // TODO: restringir em produção
+      allow write: if true;
+    }
+  }
+}

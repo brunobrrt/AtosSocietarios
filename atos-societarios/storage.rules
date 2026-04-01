@@ -1,0 +1,20 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Atos Societários — uploads de documentos (sem autenticação)
+    match /atos-societarios/{processoId}/{tipo}/{fileName} {
+      // Qualquer pessoa pode ler (para exibir no painel)
+      allow read: if true;
+
+      // Qualquer pessoa pode fazer upload (cliente envia docs pelo form)
+      // TODO: restringir em produção (ex: limitar tamanho, tipo de arquivo)
+      allow write: if true;
+    }
+
+    // Bloquear tudo o resto
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
