@@ -79,14 +79,9 @@ async function inicializarFirebase() {
             firebase.initializeApp(firebaseConfig);
         }
         db = firebase.firestore();
-        // Storage pode não estar habilitado — tenta inicializar mas não falha
-        try {
-            storage = firebase.storage();
-            console.log('Firebase conectado ✓ (com Storage)');
-        } catch (e) {
-            storage = null;
-            console.log('Firebase conectado ✓ (sem Storage — uploads desabilitados)');
-        }
+        // Storage não está habilitado no projeto — desabilitar uploads por enquanto
+        storage = null;
+        console.log('Firebase conectado ✓ (Storage desabilitado)');
     } catch (e) {
         console.error('Erro ao inicializar Firebase:', e);
         showToast('Erro ao conectar ao servidor');
@@ -571,6 +566,7 @@ function montarFormularioHTML(processo) {
             </div>
             <div class="form-field" style="margin-top:12px;">
                 <label>IPTU</label>
+                ${storage ? `
                 <div class="upload-area" onclick="document.getElementById('fc-upload-iptu').click()">
                     <input type="file" id="fc-upload-iptu" accept="image/*,.pdf" onchange="handleUpload(this, 'fc-arquivos-iptu')">
                     <span class="upload-icon">📎</span>
@@ -578,6 +574,7 @@ function montarFormularioHTML(processo) {
                     <span class="upload-hint">PDF ou imagem (JPG, PNG)</span>
                 </div>
                 <div class="uploaded-files" id="fc-arquivos-iptu"></div>
+                ` : `<p style="font-size:0.82rem;color:var(--text-light);">Upload de arquivos indisponível no momento. Envie os documentos por WhatsApp.</p>`}
             </div>
         </div>`;
     }
@@ -588,6 +585,7 @@ function montarFormularioHTML(processo) {
         <div class="modal-section">
             <h3>📎 Documentos Pessoais dos Sócios</h3>
             <p style="font-size:0.82rem;color:var(--text-light);margin-bottom:12px;">RG, CPF e outros documentos</p>
+            ${storage ? `
             <div class="upload-area" onclick="document.getElementById('fc-upload-docs').click()">
                 <input type="file" id="fc-upload-docs" accept="image/*,.pdf" multiple onchange="handleUpload(this, 'fc-arquivos-docs')">
                 <span class="upload-icon">📎</span>
@@ -595,6 +593,7 @@ function montarFormularioHTML(processo) {
                 <span class="upload-hint">PDF ou imagem — pode selecionar vários</span>
             </div>
             <div class="uploaded-files" id="fc-arquivos-docs"></div>
+            ` : `<p style="font-size:0.82rem;color:var(--text-light);">Upload de arquivos indisponível no momento. Envie os documentos por WhatsApp.</p>`}
         </div>`;
     }
 
