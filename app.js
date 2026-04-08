@@ -280,15 +280,11 @@ function escutarProcesso(processoId, callback) {
 //  PAINEL DA CONTABILIDADE
 // ===================================================================
 
-async async function iniciarPainel() {
-    // Inicializar autenticação
-    await window.inicializarAuth();
-    window.aplicarRestricoesUI();
-
-    // Listener em tempo real — atualiza automaticamente quando dados mudam
+async function iniciarPainel() {
     // Inicializar autenticação
     await inicializarAuth();
     aplicarRestricoesUI();
+
     // Listener em tempo real — atualiza automaticamente quando dados mudam
     if (unsubscribePainel) unsubscribePainel();
     unsubscribePainel = escutarProcessos(lista => {
