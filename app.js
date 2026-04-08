@@ -325,8 +325,6 @@ function atualizarFormularioProcesso() {
 // Criar processo (contabilidade)
 async function criarProcesso() {
     if (!window.verificarPermissao('admin')) return; // Só admin pode criar
-    if (!verificarPermissao('admin')) return; // Só admin pode criar
-    const tipo = document.getElementById('processo-tipo').value;
     const tipo = document.getElementById('processo-tipo').value;
     if (!tipo) { showToast('Selecione o tipo de ato societário'); return; }
 
