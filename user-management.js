@@ -1,20 +1,22 @@
-// ===== GERENCIAMENTO DE USUÁRIOS (ADMIN) =====
-// Funcionalidades: listar, criar, alterar role, remover usuários
-// ATENÇÃO: Custom claims exigem Admin SDK (backend). Usaremos Cloud Functions ou script.
+// ===== GERENCIAMENTO DE USUÁRIOS — CLOUD FUNCTIONS =====
+// Frontend chama Firebase Functions para operações com Admin SDK
 
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
 
 const auth = getAuth();
 const db = getFirestore();
+const functions = getFunctions("us-central1"); // Região das functions
 
-// ===== MODAL DE GERENCIAMENTO DE USUÁRIOS =====
+// ===== MODAL =====
 export function abrirModalGerenciarUsuarios() {
     if (!verificarPermissao('admin')) return;
     const modal = document.getElementById('modal-gerenciar-usuarios');
-    if (!modal) return;
-    modal.style.display = 'flex';
-    carregarListaUsuarios();
+    if (modal) {
+        modal.style.display = 'flex';
+        carregarListaUsuarios();
+    }
 }
 
 export function fecharModalGerenciarUsuarios() {
@@ -26,14 +28,14 @@ export function fecharModalGerenciarUsuarios() {
 export async function carregarListaUsuarios() {
     const listaEl = document.getElementById('lista-usuarios');
     if (!listaEl) return;
-    listaEl.innerHTML = '<div class="loading">Carregando...</div>';
+    listaEl.innerHTML = '<div class="loading">⏳ Carregando...</div>';
 
     try {
         const snapshot = await getDocs(collection(db, 'users'));
         const usuarios = snapshot.docs.map(d => ({ uid: d.id, ...d.data() }));
 
         if (usuarios.length === 0) {
-            listaEl.innerHTML = '<div class="empty-state">Nenhum usuário cadastrado.</div>';
+            listaEl.innerHTML = '<div class="empty-state">📭 Nenhum usuário cadastrado.</div>';
             return;
         }
 
@@ -43,7 +45,7 @@ export async function carregarListaUsuarios() {
                     <tr>
                         <th>E-mail</th>
                         <th>Role</th>
-                        <th>Criado em</th>
+                        <th>Criado</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
@@ -55,7 +57,7 @@ export async function carregarListaUsuarios() {
             const isSelf = user.uid === auth.currentUser?.uid;
             html += `
                 <tr data-uid="${user.uid}">
-                    <td>${escapeHtml(user.email || 'Sem email')}</td>
+                    <td>${escapeHtml(user.email || '—')}</td>
                     <td>
                         <span class="role-badge role-${user.role}">${user.role}</span>
                     </td>
@@ -74,44 +76,61 @@ export async function carregarListaUsuarios() {
 
     } catch (error) {
         console.error('Erro ao carregar usuários:', error);
-        listaEl.innerHTML = `<div class="error">Erro: ${escapeHtml(error.message)}</div>`;
+        listaEl.innerHTML = `<div class="error">❌ Erro: ${escapeHtml(error.message)}</div>`;
     }
 }
 
-// ===== CRIAR NOVO USUÁRIO (via Cloud Function ou Admin) =====
-// Como custom claims exigem Admin SDK, essa função abre uma explicação
+// ===== CLOUD FUNCTION: CRIAR USUÁRIO =====
 export async function criarNovoUsuario() {
     if (!verificarPermissao('admin')) return;
 
-    alert(
-        "⚠️ Para criar usuários com role, você precisa executar o script `setup-admin.js` no servidor.\n\n" +
-        "No terminal, na pasta do projeto, execute:\n" +
-        "  node setup-admin.js\n\n" +
-        "Ele vai pedir email e role (admin/viewer) e configurar tudo corretamente."
-    );
-}
+    const email = document.getElementById('novo-user-email')?.value.trim();
+    const senha = document.getElementById('novo-user-senha')?.value;
+    const role = document.getElementById('novo-user-role')?.value;
 
-// ===== ALTERAR ROLE (também via script) =====
-export async function alterarRole(uid, novaRole) {
-    alert(
-        `⚠️ Para alterar a role do usuário (UID: ${uid}) para ${novaRole}, execute no servidor:\n\n` +
-        `  node setup-admin.js\n\n` +
-        `E informe o email do usuário e a nova role desejada.`
-    );
-}
-
-// ===== REMOVER USUÁRIO =====
-export async function removerUsuario(uid, email) {
-    if (!confirm(`Remover usuário ${email}? Esta ação não pode ser desfeita.`)) return;
+    if (!email || !senha || !role) {
+        alert('⚠️ Preencha email, senha e role.');
+        return;
+    }
 
     try {
-        // NO PRODUTO: idealmente usar Cloud Function com Admin SDK para remover do Auth + Firestore
-        // Aqui removemos apenas o documento Firestore (user profile)
-        await deleteDoc(doc(db, 'users', uid));
-        alert('✅ Documento do usuário removido do Firestore.\nNota: Para remover completamente (Auth + Firestore), use Admin SDK.');
+        const createUser = httpsCallable(functions, 'manageUser');
+        await createUser({ action: 'create', email, senha, role });
+        alert(`✅ Usuário ${email} criado com sucesso!`);
+        document.getElementById('novo-user-email').value = '';
+        document.getElementById('novo-user-senha').value = '';
         carregarListaUsuarios();
     } catch (error) {
-        alert('Erro ao remover: ' + error.message);
+        console.error('Erro ao criar usuário:', error);
+        alert('❌ Erro ao criar usuário: ' + error.message);
+    }
+}
+
+// ===== CLOUD FUNCTION: ALTERAR ROLE =====
+export async function alterarRole(uid, novaRole) {
+    if (!confirm(`🎯 Alterar role para "${novaRole}"?`)) return;
+
+    try {
+        const updateRole = httpsCallable(functions, 'manageUser');
+        await updateRole({ action: 'updateRole', uid, role: novaRole });
+        alert('✅ Role atualizada!');
+        carregarListaUsuarios();
+    } catch (error) {
+        alert('❌ ' + error.message);
+    }
+}
+
+// ===== CLOUD FUNCTION: REMOVER USUÁRIO =====
+export async function removerUsuario(uid, email) {
+    if (!confirm(`🗑️ Remover usuário "${email}"? Esta ação não pode ser desfeita.`)) return;
+
+    try {
+        const deleteUser = httpsCallable(functions, 'manageUser');
+        await deleteUser({ action: 'delete', uid });
+        alert('✅ Usuário removido!');
+        carregarListaUsuarios();
+    } catch (error) {
+        alert('❌ Erro ao remover: ' + error.message);
     }
 }
 
@@ -122,14 +141,14 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// ===== INICIALIZAÇÃO: adicionar botão no topbar =====
+// ===== INICIALIZAÇÃO: botão no topbar =====
 document.addEventListener('DOMContentLoaded', () => {
     const topbarUser = document.querySelector('.topbar-user');
     if (topbarUser && !document.getElementById('btn-gerenciar-users')) {
         const btn = document.createElement('button');
         btn.id = 'btn-gerenciar-users';
         btn.className = 'btn-topbar-gold admin-only';
-        btn.style.cssText = 'margin-left:10px;';
+        btn.style.cssText = 'margin-left:10px; display:none;';
         btn.innerHTML = '👥 Gerenciar Usuários';
         btn.onclick = abrirModalGerenciarUsuarios;
         topbarUser.appendChild(btn);
@@ -137,14 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Exportar para window
-window.abrirModalGerenciarUsuarios = abrirModalGerenciarUsuarios;
-window.fecharModalGerenciarUsuarios = fecharModalGerenciarUsuarios;
-window.carregarListaUsuarios = carregarListaUsuarios;
-window.criarNovoUsuario = criarNovoUsuario;
-window.alterarRole = alterarRole;
-window.removerUsuario = removerUsuario;
-
-// Exportar para window (HTML inline)
 window.abrirModalGerenciarUsuarios = abrirModalGerenciarUsuarios;
 window.fecharModalGerenciarUsuarios = fecharModalGerenciarUsuarios;
 window.carregarListaUsuarios = carregarListaUsuarios;

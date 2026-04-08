@@ -3,9 +3,11 @@
 
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFunctions } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";;
 
 const auth = getAuth();
 const db = getFirestore();
+const functions = getFunctions("us-central1");
 
 // ===== ESTADO =====
 let usuarioAtual = null;
