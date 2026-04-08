@@ -1,0 +1,17 @@
+{
+  "name": "atos-societarios-setup",
+  "version": "1.0.0",
+  "description": "Utilitários de configuração (setup-admin, deploy)",
+  "private": true,
+  "scripts": {
+    "setup-admin": "node setup-admin.js",
+    "deploy-functions": "cd functions && npm install && cd .. && firebase deploy --only functions",
+    "deploy-rules": "firebase deploy --only firestore:rules"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

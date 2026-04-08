@@ -1,0 +1,23 @@
+# Credenciais Firebase — NUNCA commitar
+service-account.json
+*-firebase-adminsdk-*.json
+*.key.json
+
+# Node
+node_modules/
+functions/node_modules/
+npm-debug.log*
+yarn-error.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+.idea/
+
+# Build / temporários
+_site/
+.firebase/
+firebase-debug.log

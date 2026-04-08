@@ -29,19 +29,23 @@ const rl = readline.createInterface({
 });
 
 // ===== FUNÇÃO: Criar/Atualizar usuário com role =====
-async function setUserRole(email, role) {
+async function setUserRole(email, role, senha) {
     try {
         // 1. Buscar usuário pelo email
         let userRecord;
         try {
             userRecord = await auth.getUserByEmail(email);
             console.log(`✅ Usuário encontrado: ${email} (UID: ${userRecord.uid})`);
+            if (senha) {
+                await auth.updateUser(userRecord.uid, { password: senha });
+                console.log(`✅ Senha atualizada`);
+            }
         } catch (err) {
             // Se não existe, criar
             console.log(`➕ Criando novo usuário: ${email}`);
             userRecord = await auth.createUser({
                 email: email,
-                password: 'T7System@2026', // senha temporária, usuário deve trocar no primeiro login
+                password: senha,
                 emailVerified: true
             });
             console.log(`✅ Usuário criado com UID: ${userRecord.uid}`);
@@ -80,12 +84,17 @@ async function main() {
 
     const email = await perguntar('📧 Email do usuário: ');
     const roleInput = await perguntar('👤 Role (admin / viewer): ').then(r => r.toLowerCase().trim());
-
     const role = roleInput === 'admin' ? 'admin' : 'viewer';
+
+    let senha = '';
+    while (senha.length < 8) {
+        senha = await perguntar('🔑 Senha (mín. 8 caracteres): ');
+        if (senha.length < 8) console.log('   ⚠️  Senha muito curta, tente novamente.');
+    }
 
     console.log(`\n⚙️  Configurando ${email} como ${role}...\n`);
 
-    const result = await setUserRole(email, role);
+    const result = await setUserRole(email, role, senha);
 
     if (result.success) {
         console.log('\n✅ SUCESSO!');
@@ -93,7 +102,7 @@ async function main() {
         console.log(`   Role: ${result.role}`);
         console.log(`   UID: ${result.uid}`);
         console.log('\n📝 Próximos passos:');
-        console.log('   1. Se foi criado como viewer, peça para logar e use a interface admin para promovê-lo');
+        console.log('   1. Acesse o sistema com o email e senha informados');
         console.log('   2. Para criar mais usuários, execute este script novamente\n');
     } else {
         console.error('\n❌ FALHA:', result.error);
