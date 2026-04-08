@@ -45,6 +45,44 @@
     </div>
 
     <!-- ===================================================================
+         VIEW: LOGIN (exibida quando não autenticado)
+         =================================================================== -->
+    <div id="view-login" style="display:none;">
+        <div class="auth-screen">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <span class="auth-logo">📋</span>
+                    <h1>Atos Societários</h1>
+                    <p>Sistema de Gestão</p>
+                </div>
+                <div class="auth-form">
+                    <h2>Acesso ao Sistema</h2>
+                    <form id="login-page-form" onsubmit="handleLoginPagina(event)">
+                        <div class="input-group">
+                            <label>E-mail</label>
+                            <input type="email" id="login-page-email" required
+                                   placeholder="seu@email.com" autocomplete="email">
+                        </div>
+                        <div class="input-group">
+                            <label>Senha</label>
+                            <input type="password" id="login-page-senha" required
+                                   placeholder="••••••••" autocomplete="current-password">
+                        </div>
+                        <div id="login-page-error"
+                             style="display:none;color:#922b21;font-size:0.82rem;padding:8px 12px;
+                                    background:#fdecea;border-radius:8px;margin-bottom:10px;
+                                    border:1px solid #f5c6cb;"></div>
+                        <button type="submit" class="btn btn-primary">Entrar</button>
+                    </form>
+                    <div class="auth-info">
+                        🔐 Área restrita — somente equipe do escritório
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================
          VIEW: PAINEL DA CONTABILIDADE (acesso direto, sem login)
          =================================================================== -->
     <div id="view-painel" class="container" style="display:none;">
@@ -464,15 +502,6 @@
         </div>
     </div>
 
-    
-<!-- Inicialização do app -->
-<script>
-document.addEventListener('DOMContentLoaded', async () => {
-    if (typeof iniciarPainel === 'function') {
-        await iniciarPainel();
-    }
-});
-</script>
     <!-- Firebase SDKs (compatibilidade) -->
     <!-- Firebase SDKs (compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>

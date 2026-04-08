@@ -161,11 +161,12 @@ async function handleLogin(event) {
     const result = await login(email, senha);
     if (result.success) {
         fecharModalLogin();
-        // Mostrar painel após login bem-sucedido
-        mostrarPainel();
         aplicarRestricoesUI();
-        if (typeof renderizarPainel === 'function') {
-            renderizarPainel();
+        if (typeof carregarPainel === 'function') {
+            await carregarPainel();
+        } else {
+            mostrarPainel();
+            if (typeof renderizarPainel === 'function') renderizarPainel();
         }
     } else {
         errorEl.textContent = result.error || 'Erro ao fazer login';
@@ -173,31 +174,76 @@ async function handleLogin(event) {
 }
 
 async function handleLogout() {
+    if (typeof pararPainel === 'function') pararPainel();
     await logout();
-    // Esconder painel e mostrar login
-    esconderPainel();
-    abrirModalLogin();
+    if (typeof mostrarView === 'function') {
+        mostrarView('view-login');
+    } else {
+        esconderPainel();
+    }
 }
 
 // ===== CONTROLE DE VISIBILIDADE DAS VIEWS =====
 function mostrarPainel() {
     const viewPainel = document.getElementById('view-painel');
     const loading = document.getElementById('loading-screen');
+    const viewLogin = document.getElementById('view-login');
     if (viewPainel) viewPainel.style.display = 'block';
     if (loading) loading.style.display = 'none';
+    if (viewLogin) viewLogin.style.display = 'none';
 }
 
 function esconderPainel() {
     const viewPainel = document.getElementById('view-painel');
     const loading = document.getElementById('loading-screen');
+    const viewLogin = document.getElementById('view-login');
     if (viewPainel) viewPainel.style.display = 'none';
-    if (loading) loading.style.display = 'flex';
+    if (loading) loading.style.display = 'none';
+    if (viewLogin) viewLogin.style.display = 'block';
+}
+
+// ===== LOGIN VIA PÁGINA DEDICADA =====
+async function handleLoginPagina(event) {
+    event.preventDefault();
+    const email = document.getElementById('login-page-email').value.trim();
+    const senha = document.getElementById('login-page-senha').value;
+    const errorEl = document.getElementById('login-page-error');
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+
+    errorEl.style.display = 'none';
+    errorEl.textContent = '';
+
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Entrando...'; }
+
+    const result = await login(email, senha);
+
+    if (result.success) {
+        aplicarRestricoesUI();
+        if (typeof carregarPainel === 'function') {
+            await carregarPainel();
+        } else {
+            mostrarPainel();
+        }
+    } else {
+        const errCode = (result.error || '').match(/auth\/[\w-]+/)?.[0] || '';
+        const msgs = {
+            'auth/user-not-found':    'Usuário não encontrado.',
+            'auth/wrong-password':    'Senha incorreta.',
+            'auth/invalid-credential':'Email ou senha incorretos.',
+            'auth/invalid-email':     'Email inválido.',
+            'auth/too-many-requests': 'Muitas tentativas. Tente novamente mais tarde.',
+        };
+        errorEl.textContent = msgs[errCode] || 'Email ou senha incorretos.';
+        errorEl.style.display = 'block';
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Entrar'; }
+    }
 }
 
 // ===== EXPORTAR PARA WINDOW (globais) =====
 window.inicializarAuth = inicializarAuth;
 window.verificarPermissao = verificarPermissao;
 window.aplicarRestricoesUI = aplicarRestricoesUI;
+window.handleLoginPagina = handleLoginPagina;
 window.abrirModalLogin = abrirModalLogin;
 window.fecharModalLogin = fecharModalLogin;
 window.handleLogin = handleLogin;

@@ -94,29 +94,31 @@ async function inicializarFirebase() {
 // ===== ROTEAMENTO =====
 async function rotear() {
     const params = new URLSearchParams(window.location.search);
-    document.getElementById('loading-screen').style.display = 'none';
 
     if (params.has('form')) {
+        document.getElementById('loading-screen').style.display = 'none';
         const codigo = params.get('form');
         mostrarView('view-form');
         await carregarFormulario(codigo);
     } else if (params.has('status')) {
+        document.getElementById('loading-screen').style.display = 'none';
         const codigo = params.get('status');
         mostrarView('view-status');
         await carregarStatus(codigo);
     } else {
         // Sem parâmetro ou ?painel → painel da contabilidade
-        mostrarView('view-painel');
         configurarAbas();
-        iniciarPainel();
+        await iniciarPainel(); // verifica auth antes de mostrar
     }
 }
 
 function mostrarView(viewId) {
-    ['view-painel', 'view-form', 'view-status', 'view-invalido', 'view-expirado'].forEach(id => {
-        document.getElementById(id).style.display = 'none';
+    ['view-painel', 'view-form', 'view-status', 'view-invalido', 'view-expirado', 'view-login'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
     });
-    document.getElementById(viewId).style.display = 'block';
+    const target = document.getElementById(viewId);
+    if (target) target.style.display = 'block';
 }
 
 // ===== ABAS =====
@@ -281,16 +283,33 @@ function escutarProcesso(processoId, callback) {
 // ===================================================================
 
 async function iniciarPainel() {
-    // Inicializar autenticação
-    await inicializarAuth();
-    aplicarRestricoesUI();
+    const loadingEl = document.getElementById('loading-screen');
+    const authResult = await inicializarAuth();
+    if (loadingEl) loadingEl.style.display = 'none';
 
-    // Listener em tempo real — atualiza automaticamente quando dados mudam
+    if (!authResult) {
+        mostrarView('view-login');
+        return;
+    }
+    await carregarPainel();
+}
+
+async function carregarPainel() {
+    mostrarView('view-painel');
+    aplicarRestricoesUI();
     if (unsubscribePainel) unsubscribePainel();
     unsubscribePainel = escutarProcessos(lista => {
         processos = lista;
         renderizarPainel();
     });
+}
+
+function pararPainel() {
+    if (unsubscribePainel) {
+        unsubscribePainel();
+        unsubscribePainel = null;
+    }
+    processos = [];
 }
 
 function renderizarPainel() {
@@ -1044,6 +1063,19 @@ function renderizarInfoProcesso(processo, containerId) {
 
     let html = '';
 
+    // ── Resumo sempre visível (mesmo sem dados do cliente) ──
+    const statusLabels = { 'pendente': 'Pendente', 'em-andamento': 'Em Andamento', 'concluido': 'Concluído' };
+    const statusCls    = { 'pendente': '#856404', 'em-andamento': '#2d6196', 'concluido': '#1e6e45' };
+    const statusBg     = { 'pendente': '#fff3cd', 'em-andamento': '#dbeafe', 'concluido': '#d4edda' };
+    const sg = calcularStatusGeral(processo);
+    html += `<div class="info-section" style="margin-bottom:16px;">
+        <h4 style="font-size:0.78rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;">📋 Dados do Processo</h4>
+        <div class="info-row"><span class="info-label">Cliente</span><span class="info-value" style="font-weight:600;">${processo.clienteNome || '—'}</span></div>
+        <div class="info-row"><span class="info-label">Status</span><span class="info-value"><span style="background:${statusBg[sg]};color:${statusCls[sg]};padding:2px 10px;border-radius:12px;font-size:0.78rem;font-weight:700;">${statusLabels[sg] || sg}</span></span></div>
+        <div class="info-row"><span class="info-label">Criado em</span><span class="info-value">${new Date(processo.criadoEm).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric'})}</span></div>
+        ${processo.preenchidoEm ? `<div class="info-row"><span class="info-label">Preenchido em</span><span class="info-value">${new Date(processo.preenchidoEm).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'})}</span></div>` : '<div class="info-row"><span class="info-label">Formulário</span><span class="info-value" style="color:var(--warning);">⏳ Aguardando preenchimento</span></div>'}
+    </div>`;
+
     // Dados da Empresa
     if (d.razaoSocial || d.endereco || d.capitalSocial) {
         html += `<div class="info-section">
@@ -1096,8 +1128,6 @@ function renderizarInfoProcesso(processo, containerId) {
             </div>
         </div>`;
     }
-
-    if (!html) html = '<p style="color:var(--text-light);">⏳ Aguardando preenchimento do cliente...</p>';
 
     // Arquivos enviados (IPTU + Documentos)
     const arquivos = processo.arquivos || {};
