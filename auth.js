@@ -161,6 +161,8 @@ async function handleLogin(event) {
     const result = await login(email, senha);
     if (result.success) {
         fecharModalLogin();
+        // Mostrar painel após login bem-sucedido
+        mostrarPainel();
         aplicarRestricoesUI();
         if (typeof renderizarPainel === 'function') {
             renderizarPainel();
@@ -172,10 +174,24 @@ async function handleLogin(event) {
 
 async function handleLogout() {
     await logout();
-    aplicarRestricoesUI();
-    if (typeof renderizarPainel === 'function') {
-        renderizarPainel();
-    }
+    // Esconder painel e mostrar login
+    esconderPainel();
+    abrirModalLogin();
+}
+
+// ===== CONTROLE DE VISIBILIDADE DAS VIEWS =====
+function mostrarPainel() {
+    const viewPainel = document.getElementById('view-painel');
+    const loading = document.getElementById('loading-screen');
+    if (viewPainel) viewPainel.style.display = 'block';
+    if (loading) loading.style.display = 'none';
+}
+
+function esconderPainel() {
+    const viewPainel = document.getElementById('view-painel');
+    const loading = document.getElementById('loading-screen');
+    if (viewPainel) viewPainel.style.display = 'none';
+    if (loading) loading.style.display = 'flex';
 }
 
 // ===== EXPORTAR PARA WINDOW (globais) =====
@@ -188,3 +204,5 @@ window.handleLogin = handleLogin;
 window.handleLogout = handleLogout;
 window.isAdmin = isAdmin;
 window.isViewer = isViewer;
+window.mostrarPainel = mostrarPainel;
+window.esconderPainel = esconderPainel;
