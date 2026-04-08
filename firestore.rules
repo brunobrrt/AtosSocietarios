@@ -4,12 +4,19 @@ service cloud.firestore {
 
     // Regra para a coleção de atos societários
     match /atos-societarios/{processoId} {
-      // Qualquer pessoa pode ler (necessário para links de cliente)
+      // Qualquer pessoa pode ler (necessário para links de cliente e visualização pública)
       allow read: if true;
 
-      // Qualquer pessoa pode escrever (sem autenticação)
-      // TODO: restringir em produção
-      allow write: if true;
+      // Apenas usuários autenticados com role=admin podem criar/editar/excluir
+      allow write: if request.auth != null && request.auth.token.role == 'admin';
+    }
+
+    // Coleção de usuários (gerenciada pelo sistema)
+    match /users/{userId} {
+      // Usuário pode ler/editar próprio perfil
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+      // Apenas admins podem criar/editar outros usuários
+      allow create, delete: if request.auth != null && request.auth.token.role == 'admin';
     }
   }
 }

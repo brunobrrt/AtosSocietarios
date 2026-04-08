@@ -1,3 +1,6 @@
+// ===== AUTENTICAÇÃO E AUTORIZAÇÃO =====
+import { inicializarAuth, verificarPermissao, aplicarRestricoesUI } from "./auth.js";
+
 /* ============================================================
    SISTEMA DE ATOS SOCIETÁRIOS — App Principal
    Acesso via links: painel, formulário, status
@@ -277,7 +280,10 @@ function escutarProcesso(processoId, callback) {
 //  PAINEL DA CONTABILIDADE
 // ===================================================================
 
-function iniciarPainel() {
+async function iniciarPainel() {
+    // Inicializar autenticação
+    await inicializarAuth();
+    aplicarRestricoesUI();
     // Listener em tempo real — atualiza automaticamente quando dados mudam
     if (unsubscribePainel) unsubscribePainel();
     unsubscribePainel = escutarProcessos(lista => {
@@ -317,6 +323,8 @@ function atualizarFormularioProcesso() {
 
 // Criar processo (contabilidade)
 async function criarProcesso() {
+    if (!verificarPermissao('admin')) return; // Só admin pode criar
+    const tipo = document.getElementById('processo-tipo').value;
     const tipo = document.getElementById('processo-tipo').value;
     if (!tipo) { showToast('Selecione o tipo de ato societário'); return; }
 
@@ -1462,3 +1470,6 @@ function showToast(msg) {
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 3000);
 }
+\n\n// ===== EXPOR FUNÇÕES GLOBAIS PARA MÓDULOS =====
+window.renderizarPainel = renderizarPainel;
+
