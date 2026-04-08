@@ -1,9 +1,9 @@
 // ===== GERENCIAMENTO DE USUÁRIOS — CLOUD FUNCTIONS (Compat API) =====
 // Usa global `firebase` — SEM import/export
 
-const auth = firebase.auth();
-const db = firebase.firestore();
-const functions = firebase.app().functions('us-central1');
+const umAuth = firebase.auth();
+const umDb = firebase.firestore();
+const umFunctions = firebase.app().functions('us-central1');
 
 // ===== MODAL =====
 function abrirModalGerenciarUsuarios() {
@@ -27,7 +27,7 @@ async function carregarListaUsuarios() {
     listaEl.innerHTML = '<div class="loading">⏳ Carregando...</div>';
 
     try {
-        const snapshot = await db.collection('users').get();
+        const snapshot = await umDb.collection('users').get();
         const usuarios = snapshot.docs.map(d => ({ uid: d.id, ...d.data() }));
 
         if (usuarios.length === 0) {
@@ -50,7 +50,7 @@ async function carregarListaUsuarios() {
 
         for (const user of usuarios) {
             const dataCriacao = user.createdAt?.toDate?.()?.toLocaleDateString('pt-BR') || 'N/A';
-            const isSelf = user.uid === auth.currentUser?.uid;
+            const isSelf = user.uid === umAuth.currentUser?.uid;
             html += `
                 <tr data-uid="${user.uid}">
                     <td>${escapeHtml(user.email || '—')}</td>
@@ -90,7 +90,7 @@ async function criarNovoUsuario() {
     }
 
     try {
-        const createUser = functions.httpsCallable('manageUser');
+        const createUser = umFunctions.httpsCallable('manageUser');
         await createUser({ action: 'create', email, senha, role });
         alert(`✅ Usuário ${email} criado com sucesso!`);
         document.getElementById('novo-user-email').value = '';
@@ -107,7 +107,7 @@ async function alterarRole(uid, novaRole) {
     if (!confirm(`🎯 Alterar role para "${novaRole}"?`)) return;
 
     try {
-        const updateRole = functions.httpsCallable('manageUser');
+        const updateRole = umFunctions.httpsCallable('manageUser');
         await updateRole({ action: 'updateRole', uid, role: novaRole });
         alert('✅ Role atualizada!');
         carregarListaUsuarios();
@@ -121,7 +121,7 @@ async function removerUsuario(uid, email) {
     if (!confirm(`🗑️ Remover usuário "${email}"? Esta ação não pode ser desfeita.`)) return;
 
     try {
-        const deleteUser = functions.httpsCallable('manageUser');
+        const deleteUser = umFunctions.httpsCallable('manageUser');
         await deleteUser({ action: 'delete', uid });
         alert('✅ Usuário removido!');
         carregarListaUsuarios();
