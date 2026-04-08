@@ -10,3 +10,11 @@ window.firebaseConfig = {
     appId: "1:1063285830045:web:76f4d81224bed786d3ff74",
     measurementId: "G-RT2ZZ265ZY"
 };
+
+// Inicializar Firebase (apenas uma vez)
+if (typeof firebase !== 'undefined' && firebase.apps.length === 0) {
+    firebase.initializeApp(window.firebaseConfig);
+    console.log('✅ Firebase inicializado');
+} else if (typeof firebase === 'undefined') {
+    console.error('❌ Firebase SDK não carregado');
+}

@@ -1,5 +1,5 @@
-// ===== AUTENTICAÇÃO E AUTORIZAÇÃO =====
-import { inicializarAuth, verificarPermissao, aplicarRestricoesUI } from "./auth.js";
+
+
 
 /* ============================================================
    SISTEMA DE ATOS SOCIETÁRIOS — App Principal
@@ -280,7 +280,12 @@ function escutarProcesso(processoId, callback) {
 //  PAINEL DA CONTABILIDADE
 // ===================================================================
 
-async function iniciarPainel() {
+async async function iniciarPainel() {
+    // Inicializar autenticação
+    await window.inicializarAuth();
+    window.aplicarRestricoesUI();
+
+    // Listener em tempo real — atualiza automaticamente quando dados mudam
     // Inicializar autenticação
     await inicializarAuth();
     aplicarRestricoesUI();
@@ -323,6 +328,7 @@ function atualizarFormularioProcesso() {
 
 // Criar processo (contabilidade)
 async function criarProcesso() {
+    if (!window.verificarPermissao('admin')) return; // Só admin pode criar
     if (!verificarPermissao('admin')) return; // Só admin pode criar
     const tipo = document.getElementById('processo-tipo').value;
     const tipo = document.getElementById('processo-tipo').value;
@@ -1473,3 +1479,6 @@ function showToast(msg) {
 \n\n// ===== EXPOR FUNÇÕES GLOBAIS PARA MÓDULOS =====
 window.renderizarPainel = renderizarPainel;
 
+
+// Expor função globalmente para auth.js
+window.renderizarPainel = renderizarPainel;

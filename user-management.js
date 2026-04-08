@@ -1,17 +1,13 @@
-// ===== GERENCIAMENTO DE USUÁRIOS — CLOUD FUNCTIONS =====
-// Frontend chama Firebase Functions para operações com Admin SDK
+// ===== GERENCIAMENTO DE USUÁRIOS — CLOUD FUNCTIONS (Compat API) =====
+// Usa global `firebase` — SEM import/export
 
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, getDocs, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
-
-const auth = getAuth();
-const db = getFirestore();
-const functions = getFunctions("us-central1"); // Região das functions
+const auth = firebase.auth();
+const db = firebase.firestore();
+const functions = firebase.app().functions('us-central1');
 
 // ===== MODAL =====
-export function abrirModalGerenciarUsuarios() {
-    if (!verificarPermissao('admin')) return;
+function abrirModalGerenciarUsuarios() {
+    if (!window.verificarPermissao('admin')) return;
     const modal = document.getElementById('modal-gerenciar-usuarios');
     if (modal) {
         modal.style.display = 'flex';
@@ -19,19 +15,19 @@ export function abrirModalGerenciarUsuarios() {
     }
 }
 
-export function fecharModalGerenciarUsuarios() {
+function fecharModalGerenciarUsuarios() {
     const modal = document.getElementById('modal-gerenciar-usuarios');
     if (modal) modal.style.display = 'none';
 }
 
-// ===== CARREGAR LISTA DE USUÁRIOS (Firestore /users) =====
-export async function carregarListaUsuarios() {
+// ===== CARREGAR LISTA (Firestore /users) =====
+async function carregarListaUsuarios() {
     const listaEl = document.getElementById('lista-usuarios');
     if (!listaEl) return;
     listaEl.innerHTML = '<div class="loading">⏳ Carregando...</div>';
 
     try {
-        const snapshot = await getDocs(collection(db, 'users'));
+        const snapshot = await db.collection('users').get();
         const usuarios = snapshot.docs.map(d => ({ uid: d.id, ...d.data() }));
 
         if (usuarios.length === 0) {
@@ -81,8 +77,8 @@ export async function carregarListaUsuarios() {
 }
 
 // ===== CLOUD FUNCTION: CRIAR USUÁRIO =====
-export async function criarNovoUsuario() {
-    if (!verificarPermissao('admin')) return;
+async function criarNovoUsuario() {
+    if (!window.verificarPermissao('admin')) return;
 
     const email = document.getElementById('novo-user-email')?.value.trim();
     const senha = document.getElementById('novo-user-senha')?.value;
@@ -94,7 +90,7 @@ export async function criarNovoUsuario() {
     }
 
     try {
-        const createUser = httpsCallable(functions, 'manageUser');
+        const createUser = functions.httpsCallable('manageUser');
         await createUser({ action: 'create', email, senha, role });
         alert(`✅ Usuário ${email} criado com sucesso!`);
         document.getElementById('novo-user-email').value = '';
@@ -107,11 +103,11 @@ export async function criarNovoUsuario() {
 }
 
 // ===== CLOUD FUNCTION: ALTERAR ROLE =====
-export async function alterarRole(uid, novaRole) {
+async function alterarRole(uid, novaRole) {
     if (!confirm(`🎯 Alterar role para "${novaRole}"?`)) return;
 
     try {
-        const updateRole = httpsCallable(functions, 'manageUser');
+        const updateRole = functions.httpsCallable('manageUser');
         await updateRole({ action: 'updateRole', uid, role: novaRole });
         alert('✅ Role atualizada!');
         carregarListaUsuarios();
@@ -121,11 +117,11 @@ export async function alterarRole(uid, novaRole) {
 }
 
 // ===== CLOUD FUNCTION: REMOVER USUÁRIO =====
-export async function removerUsuario(uid, email) {
+async function removerUsuario(uid, email) {
     if (!confirm(`🗑️ Remover usuário "${email}"? Esta ação não pode ser desfeita.`)) return;
 
     try {
-        const deleteUser = httpsCallable(functions, 'manageUser');
+        const deleteUser = functions.httpsCallable('manageUser');
         await deleteUser({ action: 'delete', uid });
         alert('✅ Usuário removido!');
         carregarListaUsuarios();

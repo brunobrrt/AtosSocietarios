@@ -1,22 +1,15 @@
-// ===== AUTENTICAÇÃO E CONTROLE DE ACESSO =====
-// Firebase Auth + Custom Claims (roles: admin, viewer)
-
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getFunctions } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";;
-
-const auth = getAuth();
-const db = getFirestore();
-const functions = getFunctions("us-central1");
+// ===== AUTENTICAÇÃO E CONTROLE DE ACESSO (Compat API) =====
+// Usa global `firebase` carregado via script tags (compat)
+// SEM import/export — funciona como script comum
 
 // ===== ESTADO =====
 let usuarioAtual = null;
-let usuarioRole = null; // 'admin' | 'viewer' | null
+let usuarioRole = null;
 
 // ===== INICIALIZAÇÃO =====
-export function inicializarAuth() {
+function inicializarAuth() {
     return new Promise((resolve) => {
-        onAuthStateChanged(auth, async (user) => {
+        firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
                 usuarioAtual = user;
                 usuarioRole = await obterRoleUsuario(user);
@@ -33,9 +26,9 @@ export function inicializarAuth() {
 }
 
 // ===== LOGIN =====
-export async function login(email, senha) {
+async function login(email, senha) {
     try {
-        const credential = await signInWithEmailAndPassword(auth, email, senha);
+        const credential = await firebase.auth().signInWithEmailAndPassword(email, senha);
         const user = credential.user;
         usuarioAtual = user;
         usuarioRole = await obterRoleUsuario(user);
@@ -47,8 +40,8 @@ export async function login(email, senha) {
 }
 
 // ===== LOGOUT =====
-export function logout() {
-    return signOut(auth).then(() => {
+function logout() {
+    return firebase.auth().signOut().then(() => {
         usuarioAtual = null;
         usuarioRole = null;
         return { success: true };
@@ -58,24 +51,24 @@ export function logout() {
     });
 }
 
-// ===== BUSCAR ROLE DO USUÁRIO =====
+// ===== BUSCAR ROLE =====
 async function obterRoleUsuario(user) {
     try {
-        // 1. Custom claims (setados via Admin SDK)
+        // 1. Custom claims
         const token = await user.getIdTokenResult();
         if (token.claims.role) {
             return token.claims.role;
         }
 
         // 2. Firestore /users
-        const userDoc = doc(db, 'users', user.uid);
-        const snapshot = await getDoc(userDoc);
-        if (snapshot.exists()) {
+        const userDoc = firebase.firestore().collection('users').doc(user.uid);
+        const snapshot = await userDoc.get();
+        if (snapshot.exists) {
             return snapshot.data().role || 'viewer';
         }
 
-        // 3. Criar perfil padrão viewer
-        await setDoc(userDoc, {
+        // 3. Criar perfil viewer padrão
+        await userDoc.set({
             email: user.email,
             role: 'viewer',
             createdAt: new Date().toISOString()
@@ -88,19 +81,17 @@ async function obterRoleUsuario(user) {
 }
 
 // ===== VERIFICAÇÕES =====
-export function isAuthenticated() { return usuarioAtual !== null; }
-export function isAdmin() { return usuarioRole === 'admin'; }
-export function isViewer() { return usuarioRole === 'viewer'; }
-export function getCurrentUser() { return usuarioAtual; }
-export function getCurrentRole() { return usuarioRole; }
+function isAuthenticated() { return usuarioAtual !== null; }
+function isAdmin() { return usuarioRole === 'admin'; }
+function isViewer() { return usuarioRole === 'viewer'; }
+function getCurrentUser() { return usuarioAtual; }
+function getCurrentRole() { return usuarioRole; }
 
 // ===== UI: APLICAR RESTRIÇÕES =====
-export function aplicarRestricoesUI() {
-    // Elementos apenas para admin
+function aplicarRestricoesUI() {
     document.querySelectorAll('.admin-only').forEach(el => {
         el.style.display = isAdmin() ? '' : 'none';
     });
-    // Elementos bloqueados para viewer (admin-only já cobre, mas no-viewer é explícito)
     document.querySelectorAll('.no-viewer').forEach(el => {
         el.style.display = isAdmin() ? '' : 'none';
     });
@@ -127,7 +118,7 @@ function atualizarBotaoAuth() {
 }
 
 // ===== VERIFICAR PERMISSÃO =====
-export function verificarPermissao(roleNecessario = 'admin') {
+function verificarPermissao(roleNecessario = 'admin') {
     if (!isAuthenticated()) {
         alert('Você precisa estar autenticado para realizar esta ação.');
         return false;
@@ -139,8 +130,8 @@ export function verificarPermissao(roleNecessario = 'admin') {
     return true;
 }
 
-// ===== FUNÇÕES DE UI: MODAL LOGIN/LOGOUT =====
-export function abrirModalLogin() {
+// ===== FUNÇÕES UI: MODAL LOGIN/LOGOUT =====
+function abrirModalLogin() {
     const modal = document.getElementById('modal-login');
     if (modal) {
         modal.style.display = 'flex';
@@ -150,12 +141,12 @@ export function abrirModalLogin() {
     }
 }
 
-export function fecharModalLogin() {
+function fecharModalLogin() {
     const modal = document.getElementById('modal-login');
     if (modal) modal.style.display = 'none';
 }
 
-export async function handleLogin(event) {
+async function handleLogin(event) {
     event.preventDefault();
     const email = document.getElementById('login-email').value.trim();
     const senha = document.getElementById('login-senha').value;
@@ -171,9 +162,7 @@ export async function handleLogin(event) {
     if (result.success) {
         fecharModalLogin();
         aplicarRestricoesUI();
-        // Atualizar painel se estiver visível
-        const painel = document.getElementById('view-painel');
-        if (painel && painel.style.display !== 'none') {
+        if (typeof renderizarPainel === 'function') {
             renderizarPainel();
         }
     } else {
@@ -181,19 +170,21 @@ export async function handleLogin(event) {
     }
 }
 
-export async function handleLogout() {
+async function handleLogout() {
     await logout();
     aplicarRestricoesUI();
-    const painel = document.getElementById('view-painel');
-    if (painel && painel.style.display !== 'none') {
+    if (typeof renderizarPainel === 'function') {
         renderizarPainel();
     }
 }
 
-// ===== EXPORTAR PARA WINDOW (HTML inline events) =====
+// ===== EXPORTAR PARA WINDOW (globais) =====
+window.inicializarAuth = inicializarAuth;
+window.verificarPermissao = verificarPermissao;
+window.aplicarRestricoesUI = aplicarRestricoesUI;
 window.abrirModalLogin = abrirModalLogin;
 window.fecharModalLogin = fecharModalLogin;
 window.handleLogin = handleLogin;
 window.handleLogout = handleLogout;
-window.verificarPermissao = verificarPermissao;
-window.aplicarRestricoesUI = aplicarRestricoesUI;
+window.isAdmin = isAdmin;
+window.isViewer = isViewer;
