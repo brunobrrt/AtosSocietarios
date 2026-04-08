@@ -1158,7 +1158,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
     z-index: 10000;
 }
 .modal-content {
-    background: var(--navy);
+    background: var(--white);
     border-radius: 12px;
     width: 90%; max-width: 500px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
