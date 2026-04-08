@@ -1449,7 +1449,8 @@ function enviarLinksWhatsApp() {
         || window._linksParaEnviarDetalhe?.tipo
         || 'ato societário';
 
-    const msg = `Olá${cliente ? ' ' + cliente : ''}! Seu processo de ${tipo} foi criado.\n\n` +
+    const msg = `Olá${cliente ? ' ' + cliente : ''}! Seu processo de ${tipo} foi criado.
+` +
         `📝 *Preencher dados:* ${linkForm}\n` +
         `📊 *Acompanhar status:* ${linkStatus}`;
 
@@ -1470,7 +1471,8 @@ function showToast(msg) {
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 3000);
 }
-\n\n// ===== EXPOR FUNÇÕES GLOBAIS PARA MÓDULOS =====
+
+// ===== EXPOR FUNÇÕES GLOBAIS PARA MÓDULOS =====
 window.renderizarPainel = renderizarPainel;
 
 
