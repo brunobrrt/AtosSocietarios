@@ -1,0 +1,25 @@
+{
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs18"
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      "functions/**",
+      "setup-admin.js",
+      "service-account.json",
+      "node_modules/**",
+      ".git/**",
+      "**/*.md"
+    ]
+  }
+}
