@@ -1063,7 +1063,7 @@ function renderizarInfoProcesso(processo, containerId) {
 
     let html = '';
 
-    // ── Resumo sempre visível (mesmo sem dados do cliente) ──
+    // ── Resumo sempre visível ──
     const statusLabels = { 'pendente': 'Pendente', 'em-andamento': 'Em Andamento', 'concluido': 'Concluído' };
     const statusCls    = { 'pendente': '#856404', 'em-andamento': '#2d6196', 'concluido': '#1e6e45' };
     const statusBg     = { 'pendente': '#fff3cd', 'em-andamento': '#dbeafe', 'concluido': '#d4edda' };
@@ -1076,88 +1076,77 @@ function renderizarInfoProcesso(processo, containerId) {
         ${processo.preenchidoEm ? `<div class="info-row"><span class="info-label">Preenchido em</span><span class="info-value">${new Date(processo.preenchidoEm).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'})}</span></div>` : '<div class="info-row"><span class="info-label">Formulário</span><span class="info-value" style="color:var(--warning);">⏳ Aguardando preenchimento</span></div>'}
     </div>`;
 
-    // Dados da Empresa
-    if (d.razaoSocial || d.endereco || d.capitalSocial) {
-        html += `<div class="info-section">
-            <h4 style="font-size:0.78rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;">🏢 Dados da Empresa</h4>`;
+    // ── Dados da Empresa (sempre visível para abertura e alteração) ──
+    if (tipo !== 'encerramento') {
+        html += `<div class="info-section" style="margin-top:16px;">
+            <h4 style="font-size:0.78rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;">🏢 Dados da Empresa</h4>
+            <div class="info-row"><span class="info-label">Razão Social</span><span class="info-value">${d.razaoSocial || '<span style="color:var(--text-light);">—</span>'}</span></div>
+            <div class="info-row"><span class="info-label">Razão Social (opção 2)</span><span class="info-value">${d.razaoSocial2 || '<span style="color:var(--text-light);">—</span>'}</span></div>
+            <div class="info-row"><span class="info-label">Endereço</span><span class="info-value">${d.endereco || '<span style="color:var(--text-light);">—</span>'}</span></div>`;
 
-        if (d.razaoSocial) {
-            html += `<div class="info-row"><span class="info-label">Razão Social</span><span class="info-value">${d.razaoSocial}</span></div>`;
+        if (tipo === 'abertura') {
+            html += `
+            <div class="info-row"><span class="info-label">Capital Social</span><span class="info-value" style="font-weight:700;">${d.capitalSocial ? 'R$ ' + d.capitalSocial.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '<span style="color:var(--text-light);">—</span>'}</span></div>
+            <div class="info-row"><span class="info-label">Atividade Principal</span><span class="info-value">${d.atividadePrincipal || '<span style="color:var(--text-light);">—</span>'}</span></div>
+            <div class="info-row"><span class="info-label">Atividade Secundária</span><span class="info-value">${d.atividadeSecundaria || '<span style="color:var(--text-light);">—</span>'}</span></div>
+            <div class="info-row"><span class="info-label">Telefone</span><span class="info-value">${d.telefone || '<span style="color:var(--text-light);">—</span>'}</span></div>
+            <div class="info-row"><span class="info-label">E-mail CNPJ</span><span class="info-value">${d.emailCNPJ || '<span style="color:var(--text-light);">—</span>'}</span></div>
+            <div class="info-row"><span class="info-label">Porte</span><span class="info-value">${d.porte ? (PORTES[d.porte] || d.porte) : '<span style="color:var(--text-light);">—</span>'}</span></div>
+            <div class="info-row"><span class="info-label">Regime Tributário</span><span class="info-value">${d.regimeTributario ? (REGIMES[d.regimeTributario] || d.regimeTributario) : '<span style="color:var(--text-light);">—</span>'}</span></div>`;
         }
-        if (d.razaoSocial2) {
-            html += `<div class="info-row"><span class="info-label">Razão Social (opção 2)</span><span class="info-value">${d.razaoSocial2}</span></div>`;
-        }
-        if (d.endereco) {
-            html += `<div class="info-row"><span class="info-label">Endereço</span><span class="info-value">${d.endereco}</span></div>`;
-        }
-        if (d.capitalSocial) {
-            html += `<div class="info-row"><span class="info-label">Capital Social</span><span class="info-value" style="font-weight:700;">R$ ${d.capitalSocial.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>`;
-        }
-        if (d.atividadePrincipal) {
-            html += `<div class="info-row"><span class="info-label">Atividade Principal</span><span class="info-value">${d.atividadePrincipal}</span></div>`;
-        }
-        if (d.atividadeSecundaria) {
-            html += `<div class="info-row"><span class="info-label">Atividade Secundária</span><span class="info-value">${d.atividadeSecundaria}</span></div>`;
-        }
-        if (d.telefone) {
-            html += `<div class="info-row"><span class="info-label">Telefone</span><span class="info-value">${d.telefone}</span></div>`;
-        }
-        if (d.emailCNPJ) {
-            html += `<div class="info-row"><span class="info-label">E-mail CNPJ</span><span class="info-value">${d.emailCNPJ}</span></div>`;
-        }
-        if (d.porte) {
-            html += `<div class="info-row"><span class="info-label">Porte</span><span class="info-value">${PORTES[d.porte] || d.porte}</span></div>`;
-        }
-        if (d.regimeTributario) {
-            html += `<div class="info-row"><span class="info-label">Regime Tributário</span><span class="info-value">${REGIMES[d.regimeTributario] || d.regimeTributario}</span></div>`;
-        }
+
         html += `</div>`;
     }
 
-    // Sócios com busca e expand/collapse
-    if (processo.socios?.length) {
-        const totalPct = processo.socios.reduce((sum, s) => sum + (s.percentual || 0), 0);
+    // ── Sócios (sempre visível para abertura e alteração) ──
+    if (tipo !== 'encerramento') {
+        const socios = processo.socios || [];
+        const totalPct = socios.reduce((sum, s) => sum + (s.percentual || 0), 0);
         html += `<div class="info-section" style="margin-top:16px;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-                <h4 style="font-size:0.78rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.4px;">👥 Sócios (${processo.socios.length}) — ${totalPct}% total</h4>
-                <button class="btn btn-small btn-outline" onclick="toggleTodosSocios()" id="btn-toggle-socios" style="font-size:0.72rem;">▼ Expandir todos</button>
+                <h4 style="font-size:0.78rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.4px;">👥 Sócios${socios.length ? ` (${socios.length}) — ${totalPct}% total` : ''}</h4>
+                ${socios.length ? `<button class="btn btn-small btn-outline" onclick="toggleTodosSocios()" id="btn-toggle-socios" style="font-size:0.72rem;">▼ Expandir todos</button>` : ''}
             </div>
+            ${socios.length ? `
             <input type="text" id="filtro-socios-modal" placeholder="🔍 Buscar sócio..." oninput="filtrarSociosModal()" style="width:100%;padding:6px 10px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:0.82rem;margin-bottom:10px;">
             <div id="lista-socios-modal">
-                ${processo.socios.map((s, i) => montarSocioCard(s, i)).join('')}
-            </div>
+                ${socios.map((s, i) => montarSocioCard(s, i)).join('')}
+            </div>` : `<div style="font-size:0.82rem;color:var(--text-light);padding:10px 0;">⏳ Nenhum sócio informado ainda.</div>`}
         </div>`;
     }
 
-    // Arquivos enviados (IPTU + Documentos)
+    // ── Arquivos / Documentos (sempre visível) ──
     const arquivos = processo.arquivos || {};
     const iptuFiles = arquivos.iptu || [];
     const docsFiles = arquivos.docs || [];
 
-    if (iptuFiles.length > 0 || docsFiles.length > 0) {
+    // IPTU — apenas para abertura e alteração
+    if (tipo !== 'encerramento') {
         html += `<div class="info-section" style="margin-top:16px;">
-            <h4 style="font-size:0.78rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;">📎 Documentos Enviados</h4>`;
-
-        // IPTU
+            <h4 style="font-size:0.78rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;">🏠 Comprovante de IPTU</h4>`;
         if (iptuFiles.length > 0) {
-            html += `<div style="margin-bottom:12px;">
-                <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">🏠 Comprovante de IPTU (${iptuFiles.length})</div>
-                <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                    ${iptuFiles.map(f => montarMiniaturaArquivo(f)).join('')}
-                </div>
+            html += `<div style="display:flex;flex-wrap:wrap;gap:8px;">${iptuFiles.map(f => montarMiniaturaArquivo(f)).join('')}</div>`;
+        } else {
+            html += `<div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--bg-section);border:1.5px dashed var(--border);border-radius:var(--radius);">
+                <span style="font-size:1.5rem;opacity:0.4;">📎</span>
+                <span style="font-size:0.82rem;color:var(--text-light);">Nenhum arquivo enviado ainda.</span>
             </div>`;
         }
+        html += `</div>`;
+    }
 
-        // Documentos
+    // Documentos Pessoais — abertura e encerramento
+    if (tipo === 'abertura' || tipo === 'encerramento') {
+        html += `<div class="info-section" style="margin-top:16px;">
+            <h4 style="font-size:0.78rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;">📄 Documentos Pessoais dos Sócios</h4>`;
         if (docsFiles.length > 0) {
-            html += `<div>
-                <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">📄 Documentos Pessoais (${docsFiles.length})</div>
-                <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                    ${docsFiles.map(f => montarMiniaturaArquivo(f)).join('')}
-                </div>
+            html += `<div style="display:flex;flex-wrap:wrap;gap:8px;">${docsFiles.map(f => montarMiniaturaArquivo(f)).join('')}</div>`;
+        } else {
+            html += `<div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--bg-section);border:1.5px dashed var(--border);border-radius:var(--radius);">
+                <span style="font-size:1.5rem;opacity:0.4;">📎</span>
+                <span style="font-size:0.82rem;color:var(--text-light);">Nenhum documento enviado ainda.</span>
             </div>`;
         }
-
         html += `</div>`;
     }
 
