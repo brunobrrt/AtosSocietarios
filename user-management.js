@@ -1,9 +1,8 @@
-// ===== GERENCIAMENTO DE USUÁRIOS — CLOUD FUNCTIONS (Compat API) =====
+// ===== GERENCIAMENTO DE USUÁRIOS — Firestore direto (sem Cloud Functions) =====
 // Usa global `firebase` — SEM import/export
 
 const umAuth = firebase.auth();
 const umDb = firebase.firestore();
-const umFunctions = firebase.app().functions('us-central1');
 
 // ===== MODAL =====
 function abrirModalGerenciarUsuarios() {
@@ -20,16 +19,15 @@ function fecharModalGerenciarUsuarios() {
     if (modal) modal.style.display = 'none';
 }
 
-// ===== CARREGAR LISTA (via Cloud Function — Admin SDK, sem restrições de regras) =====
+// ===== CARREGAR LISTA (Firestore direto) =====
 async function carregarListaUsuarios() {
     const listaEl = document.getElementById('lista-usuarios');
     if (!listaEl) return;
     listaEl.innerHTML = '<div style="color:var(--text-light);font-size:0.9rem;">⏳ Carregando...</div>';
 
     try {
-        const manageUser = umFunctions.httpsCallable('manageUser');
-        const result = await manageUser({ action: 'list' });
-        const usuarios = result.data.usuarios || [];
+        const snapshot = await umDb.collection('users').orderBy('email').get();
+        const usuarios = snapshot.docs.map(d => ({ uid: d.id, ...d.data() }));
 
         if (usuarios.length === 0) {
             listaEl.innerHTML = '<div style="color:var(--text-light);font-size:0.9rem;">📭 Nenhum usuário cadastrado.</div>';
@@ -50,9 +48,7 @@ async function carregarListaUsuarios() {
         `;
 
         for (const user of usuarios) {
-            const dataCriacao = user.createdAt
-                ? new Date(user.createdAt).toLocaleDateString('pt-BR')
-                : 'N/A';
+            const dataCriacao = user.createdAt?.toDate?.()?.toLocaleDateString('pt-BR') || 'N/A';
             const isSelf = user.uid === umAuth.currentUser?.uid;
             html += `
                 <tr data-uid="${user.uid}">
@@ -79,7 +75,7 @@ async function carregarListaUsuarios() {
     }
 }
 
-// ===== CLOUD FUNCTION: CRIAR USUÁRIO =====
+// ===== CRIAR USUÁRIO (app secundário — não desloga o admin) =====
 async function criarNovoUsuario() {
     if (!window.verificarPermissao('admin')) return;
 
@@ -88,46 +84,75 @@ async function criarNovoUsuario() {
     const role = document.getElementById('novo-user-role')?.value;
 
     if (!email || !senha || !role) {
-        alert('⚠️ Preencha email, senha e role.');
+        alert('⚠️ Preencha e-mail, senha e perfil.');
+        return;
+    }
+    if (senha.length < 6) {
+        alert('⚠️ A senha deve ter pelo menos 6 caracteres.');
         return;
     }
 
+    const btnCriar = document.querySelector('#modal-gerenciar-usuarios button.btn-primary');
+    if (btnCriar) { btnCriar.disabled = true; btnCriar.textContent = '⏳ Criando...'; }
+
     try {
-        const createUser = umFunctions.httpsCallable('manageUser');
-        await createUser({ action: 'create', email, senha, role });
-        alert(`✅ Usuário ${email} criado com sucesso!`);
+        // App secundário para criar o usuário sem deslogar o admin
+        const secondaryApp = firebase.apps.find(a => a.name === 'Secondary') ||
+                             firebase.initializeApp(firebase.app().options, 'Secondary');
+
+        const credential = await secondaryApp.auth().createUserWithEmailAndPassword(email, senha);
+        const novoUid = credential.user.uid;
+
+        // Desloga imediatamente do app secundário
+        await secondaryApp.auth().signOut();
+
+        // Salva role no Firestore como admin (app principal)
+        await umDb.collection('users').doc(novoUid).set({
+            email,
+            role,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
         document.getElementById('novo-user-email').value = '';
         document.getElementById('novo-user-senha').value = '';
+        alert(`✅ Usuário ${email} criado com sucesso!`);
         carregarListaUsuarios();
+
     } catch (error) {
         console.error('Erro ao criar usuário:', error);
-        // error.message contém o código; error.details contém a mensagem real
-        const msg = error.details || error.message || 'Erro desconhecido';
-        alert('❌ Erro ao criar usuário: ' + msg);
+        const msgs = {
+            'auth/email-already-in-use': 'E-mail já está em uso.',
+            'auth/invalid-email':        'E-mail inválido.',
+            'auth/weak-password':        'Senha muito fraca (mínimo 6 caracteres).'
+        };
+        alert('❌ Erro ao criar usuário: ' + (msgs[error.code] || error.message));
+    } finally {
+        if (btnCriar) { btnCriar.disabled = false; btnCriar.textContent = '➕ Criar Usuário'; }
     }
 }
 
-// ===== CLOUD FUNCTION: ALTERAR ROLE =====
+// ===== ALTERAR ROLE (Firestore direto) =====
 async function alterarRole(uid, novaRole) {
-    if (!confirm(`🎯 Alterar role para "${novaRole}"?`)) return;
+    if (!confirm(`🎯 Alterar perfil para "${novaRole}"?`)) return;
 
     try {
-        const updateRole = umFunctions.httpsCallable('manageUser');
-        await updateRole({ action: 'updateRole', uid, role: novaRole });
-        alert('✅ Role atualizada!');
+        await umDb.collection('users').doc(uid).update({
+            role: novaRole,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        alert('✅ Perfil atualizado!');
         carregarListaUsuarios();
     } catch (error) {
-        alert('❌ ' + error.message);
+        alert('❌ Erro ao alterar perfil: ' + error.message);
     }
 }
 
-// ===== CLOUD FUNCTION: REMOVER USUÁRIO =====
+// ===== REMOVER USUÁRIO (Firestore direto) =====
 async function removerUsuario(uid, email) {
-    if (!confirm(`🗑️ Remover usuário "${email}"? Esta ação não pode ser desfeita.`)) return;
+    if (!confirm(`🗑️ Remover usuário "${email}"?\nO acesso ao sistema será bloqueado.`)) return;
 
     try {
-        const deleteUser = umFunctions.httpsCallable('manageUser');
-        await deleteUser({ action: 'delete', uid });
+        await umDb.collection('users').doc(uid).delete();
         alert('✅ Usuário removido!');
         carregarListaUsuarios();
     } catch (error) {
