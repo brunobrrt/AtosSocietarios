@@ -77,9 +77,12 @@ body {
 }
 
 .auth-logo {
-    font-size: 2.6rem;
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
     margin-bottom: 10px;
     display: block;
+    border-radius: 14px;
 }
 
 .auth-header h1 {
@@ -190,8 +193,10 @@ body {
 }
 
 .brand-logo {
-    font-size: 1.8rem;
-    line-height: 1;
+    width: 38px;
+    height: 38px;
+    object-fit: contain;
+    border-radius: 8px;
     flex-shrink: 0;
 }
 
