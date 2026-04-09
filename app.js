@@ -749,9 +749,20 @@ function adicionarSocioForm(dadosExistentes) {
                     <label>CPF</label>
                     <input type="text" id="socio-cpf-${idx}" placeholder="000.000.000-00" maxlength="14" value="${s.cpf || ''}" oninput="aplicarMascaraCPF(this)">
                 </div>
+                <div class="form-field" style="flex:0 0 200px;">
+                    <label>Origem</label>
+                    <select id="socio-origem-${idx}" onchange="toggleCRNM(${idx})">
+                        <option value="brasileiro" ${(s.tipoDocumento || 'brasileiro') === 'brasileiro' ? 'selected' : ''}>🇧🇷 Brasileiro(a)</option>
+                        <option value="estrangeiro" ${s.tipoDocumento === 'estrangeiro' ? 'selected' : ''}>🌍 Estrangeiro(a)</option>
+                    </select>
+                </div>
+                <div class="form-field" id="socio-crnm-group-${idx}" style="${s.tipoDocumento === 'estrangeiro' ? '' : 'display:none;'}">
+                    <label>CRNM <span class="optional">(Cart. Reg. Nacional Migratório)</span></label>
+                    <input type="text" id="socio-crnm-${idx}" placeholder="Ex: V123456-A" value="${s.crnm || ''}">
+                </div>
                 <div class="form-field">
                     <label>Nacionalidade</label>
-                    <input type="text" id="socio-nacionalidade-${idx}" value="${s.nacionalidade || 'Brasileira'}">
+                    <input type="text" id="socio-nacionalidade-${idx}" value="${s.nacionalidade || (s.tipoDocumento === 'estrangeiro' ? '' : 'Brasileira')}" placeholder="Ex: Italiana">
                 </div>
                 <div class="form-field">
                     <label>Profissão</label>
@@ -792,6 +803,24 @@ function removerSocioForm(idx) {
     const entry = document.getElementById('socio-entry-' + idx);
     if (entry) entry.remove();
     recalcularParticipacoes();
+}
+
+function toggleCRNM(idx) {
+    const origem = document.getElementById('socio-origem-' + idx)?.value;
+    const crnmGroup = document.getElementById('socio-crnm-group-' + idx);
+    const nacionalidadeInput = document.getElementById('socio-nacionalidade-' + idx);
+    if (!crnmGroup) return;
+    if (origem === 'estrangeiro') {
+        crnmGroup.style.display = '';
+        if (nacionalidadeInput && nacionalidadeInput.value === 'Brasileira') {
+            nacionalidadeInput.value = '';
+        }
+    } else {
+        crnmGroup.style.display = 'none';
+        if (nacionalidadeInput && !nacionalidadeInput.value) {
+            nacionalidadeInput.value = 'Brasileira';
+        }
+    }
 }
 
 function recalcularParticipacoes() {
@@ -907,6 +936,8 @@ async function salvarFormularioCliente() {
                 nome,
                 percentual: parseFloat(document.getElementById('socio-percentual-' + idx)?.value) || 0,
                 cpf: document.getElementById('socio-cpf-' + idx)?.value.trim() || '',
+                tipoDocumento: document.getElementById('socio-origem-' + idx)?.value || 'brasileiro',
+                crnm: document.getElementById('socio-crnm-' + idx)?.value.trim() || '',
                 nacionalidade: document.getElementById('socio-nacionalidade-' + idx)?.value || '',
                 profissao: document.getElementById('socio-profissao-' + idx)?.value || '',
                 estadoCivil: document.getElementById('socio-estado-civil-' + idx)?.value || '',
@@ -1174,6 +1205,8 @@ function montarSocioCard(s, i) {
         </div>
         <div class="socio-detalhe" id="socio-detalhe-${i}" style="display:none;padding:8px 0 12px 12px;border-top:1px solid var(--border);font-size:0.82rem;">
             ${s.cpf ? `<div class="info-row"><span class="info-label">CPF</span><span class="info-value">${s.cpf}</span></div>` : ''}
+            ${s.tipoDocumento === 'estrangeiro' ? `<div class="info-row"><span class="info-label">Documento</span><span class="info-value">🌍 Estrangeiro(a)</span></div>` : ''}
+            ${s.crnm ? `<div class="info-row"><span class="info-label">CRNM</span><span class="info-value">${s.crnm}</span></div>` : ''}
             ${s.nacionalidade ? `<div class="info-row"><span class="info-label">Nacionalidade</span><span class="info-value">${s.nacionalidade}</span></div>` : ''}
             ${s.profissao ? `<div class="info-row"><span class="info-label">Profissão</span><span class="info-value">${s.profissao}</span></div>` : ''}
             ${s.estadoCivil ? `<div class="info-row"><span class="info-label">Estado Civil</span><span class="info-value">${ESTADOS_CIVIS[s.estadoCivil] || s.estadoCivil}</span></div>` : ''}
