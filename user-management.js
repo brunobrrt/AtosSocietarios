@@ -20,18 +20,19 @@ function fecharModalGerenciarUsuarios() {
     if (modal) modal.style.display = 'none';
 }
 
-// ===== CARREGAR LISTA (Firestore /users) =====
+// ===== CARREGAR LISTA (via Cloud Function — Admin SDK, sem restrições de regras) =====
 async function carregarListaUsuarios() {
     const listaEl = document.getElementById('lista-usuarios');
     if (!listaEl) return;
-    listaEl.innerHTML = '<div class="loading">⏳ Carregando...</div>';
+    listaEl.innerHTML = '<div style="color:var(--text-light);font-size:0.9rem;">⏳ Carregando...</div>';
 
     try {
-        const snapshot = await umDb.collection('users').get();
-        const usuarios = snapshot.docs.map(d => ({ uid: d.id, ...d.data() }));
+        const manageUser = umFunctions.httpsCallable('manageUser');
+        const result = await manageUser({ action: 'list' });
+        const usuarios = result.data.usuarios || [];
 
         if (usuarios.length === 0) {
-            listaEl.innerHTML = '<div class="empty-state">📭 Nenhum usuário cadastrado.</div>';
+            listaEl.innerHTML = '<div style="color:var(--text-light);font-size:0.9rem;">📭 Nenhum usuário cadastrado.</div>';
             return;
         }
 
@@ -49,7 +50,9 @@ async function carregarListaUsuarios() {
         `;
 
         for (const user of usuarios) {
-            const dataCriacao = user.createdAt?.toDate?.()?.toLocaleDateString('pt-BR') || 'N/A';
+            const dataCriacao = user.createdAt
+                ? new Date(user.createdAt).toLocaleDateString('pt-BR')
+                : 'N/A';
             const isSelf = user.uid === umAuth.currentUser?.uid;
             html += `
                 <tr data-uid="${user.uid}">
@@ -59,7 +62,7 @@ async function carregarListaUsuarios() {
                     </td>
                     <td>${dataCriacao}</td>
                     <td>
-                        <button class="btn btn-sm btn-danger" onclick="removerUsuario('${user.uid}', '${escapeHtml(user.email || '')}')" ${isSelf ? 'disabled' : ''}>
+                        <button class="btn btn-small btn-danger" onclick="removerUsuario('${user.uid}', '${escapeHtml(user.email || '')}')" ${isSelf ? 'disabled title="Não é possível remover a si mesmo"' : ''}>
                             🗑️ Remover
                         </button>
                     </td>
@@ -72,7 +75,7 @@ async function carregarListaUsuarios() {
 
     } catch (error) {
         console.error('Erro ao carregar usuários:', error);
-        listaEl.innerHTML = `<div class="error">❌ Erro: ${escapeHtml(error.message)}</div>`;
+        listaEl.innerHTML = `<div style="color:var(--danger);font-size:0.9rem;">❌ Erro: ${escapeHtml(error.message)}</div>`;
     }
 }
 

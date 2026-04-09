@@ -13,9 +13,10 @@ service cloud.firestore {
 
     // Coleção de usuários (gerenciada pelo sistema)
     match /users/{userId} {
-      // Usuário pode ler/editar próprio perfil
-      allow read, update: if request.auth != null && request.auth.uid == userId;
-      // Apenas admins podem criar/editar outros usuários
+      // Usuário pode ler/editar próprio perfil; admin pode ler qualquer perfil
+      allow read: if request.auth != null && (request.auth.uid == userId || request.auth.token.role == 'admin');
+      allow update: if request.auth != null && (request.auth.uid == userId || request.auth.token.role == 'admin');
+      // Apenas admins podem criar/excluir usuários
       allow create, delete: if request.auth != null && request.auth.token.role == 'admin';
     }
   }
