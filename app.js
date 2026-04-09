@@ -82,9 +82,8 @@ async function inicializarFirebase() {
             firebase.initializeApp(firebaseConfig);
         }
         db = firebase.firestore();
-        // Storage não está habilitado no projeto — desabilitar uploads por enquanto
-        storage = null;
-        console.log('Firebase conectado ✓ (Storage desabilitado)');
+        storage = null; // Upload real desabilitado — demo usa localStorage
+        console.log('Firebase conectado ✓');
     } catch (e) {
         console.error('Erro ao inicializar Firebase:', e);
         showToast('Erro ao conectar ao servidor');
@@ -593,15 +592,13 @@ function montarFormularioHTML(processo) {
             </div>
             <div class="form-field" style="margin-top:12px;">
                 <label>IPTU</label>
-                ${storage ? `
                 <div class="upload-area" onclick="document.getElementById('fc-upload-iptu').click()">
                     <input type="file" id="fc-upload-iptu" accept="image/*,.pdf" onchange="handleUpload(this, 'fc-arquivos-iptu')">
-                    <span class="upload-icon">📎</span>
+                    <span class="upload-icon">📷</span>
                     <span class="upload-text">Clique para enviar o comprovante de IPTU</span>
-                    <span class="upload-hint">PDF ou imagem (JPG, PNG)</span>
+                    <span class="upload-hint">Foto ou PDF (JPG, PNG, PDF)</span>
                 </div>
                 <div class="uploaded-files" id="fc-arquivos-iptu"></div>
-                ` : `<p style="font-size:0.82rem;color:var(--text-light);">Upload de arquivos indisponível no momento. Envie os documentos por WhatsApp.</p>`}
             </div>
         </div>`;
     }
@@ -611,16 +608,14 @@ function montarFormularioHTML(processo) {
         html += `
         <div class="modal-section">
             <h3>📎 Documentos Pessoais dos Sócios</h3>
-            <p style="font-size:0.82rem;color:var(--text-light);margin-bottom:12px;">RG, CPF e outros documentos</p>
-            ${storage ? `
+            <p style="font-size:0.82rem;color:var(--text-light);margin-bottom:12px;">RG, CPF, fotos e outros documentos</p>
             <div class="upload-area" onclick="document.getElementById('fc-upload-docs').click()">
                 <input type="file" id="fc-upload-docs" accept="image/*,.pdf" multiple onchange="handleUpload(this, 'fc-arquivos-docs')">
-                <span class="upload-icon">📎</span>
-                <span class="upload-text">Clique para enviar documentos</span>
-                <span class="upload-hint">PDF ou imagem — pode selecionar vários</span>
+                <span class="upload-icon">📷</span>
+                <span class="upload-text">Clique para enviar fotos ou documentos</span>
+                <span class="upload-hint">Foto ou PDF — pode selecionar vários</span>
             </div>
             <div class="uploaded-files" id="fc-arquivos-docs"></div>
-            ` : `<p style="font-size:0.82rem;color:var(--text-light);">Upload de arquivos indisponível no momento. Envie os documentos por WhatsApp.</p>`}
         </div>`;
     }
 
@@ -971,6 +966,16 @@ async function salvarFormularioCliente() {
         console.error('Erro ao salvar:', e);
         showToast('Erro ao salvar. Tente novamente.');
         return;
+    }
+
+    // Demo: persistir nomes dos arquivos no localStorage para apresentação
+    const demoArquivos = {
+        iptu: arquivosUpload.iptu.map(a => a.name),
+        docs: arquivosUpload.docs.map(a => a.name),
+        savedAt: new Date().toISOString()
+    };
+    if (demoArquivos.iptu.length > 0 || demoArquivos.docs.length > 0) {
+        localStorage.setItem('demo-arquivos-' + processoAtual.id, JSON.stringify(demoArquivos));
     }
 
     // Limpar arquivos pendentes
