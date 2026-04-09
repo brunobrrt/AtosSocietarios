@@ -502,6 +502,57 @@
         </div>
     </div>
 
+    <!-- MODAL: GERENCIAR USUÁRIOS -->
+    <div id="modal-gerenciar-usuarios" class="modal" style="display:none;">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <div>
+                    <h2>👥 Gerenciar Usuários</h2>
+                    <p class="modal-subtitle">Crie, visualize e remova usuários do sistema</p>
+                </div>
+                <button class="btn-close" onclick="fecharModalGerenciarUsuarios()"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Criar novo usuário -->
+                <div class="modal-section">
+                    <h3>➕ Novo Usuário</h3>
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label>E-mail</label>
+                            <input type="email" id="novo-user-email" placeholder="email@exemplo.com" class="form-control">
+                        </div>
+                        <div class="form-field">
+                            <label>Senha</label>
+                            <input type="password" id="novo-user-senha" placeholder="Mínimo 6 caracteres" class="form-control">
+                        </div>
+                        <div class="form-field">
+                            <label>Perfil</label>
+                            <select id="novo-user-role" class="form-control">
+                                <option value="contabilidade">contabilidade</option>
+                                <option value="admin">admin</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-top:12px;">
+                        <button class="btn btn-primary btn-small" onclick="criarNovoUsuario()">➕ Criar Usuário</button>
+                    </div>
+                </div>
+
+                <!-- Lista de usuários -->
+                <div class="modal-section">
+                    <h3>📋 Usuários Cadastrados</h3>
+                    <div id="lista-usuarios">
+                        <div style="color:var(--text-light);font-size:0.9rem;">⏳ Carregando...</div>
+                    </div>
+                </div>
+
+                <div style="display:flex;justify-content:flex-end;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+                    <button class="btn btn-outline" onclick="fecharModalGerenciarUsuarios()">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase SDKs (compatibilidade) -->
     <!-- Firebase SDKs (compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
