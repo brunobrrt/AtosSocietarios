@@ -22,7 +22,7 @@ exports.manageUser = functions.region('us-central1').https.onCall(async (data, c
 
     try {
         switch (action) {
-            case 'create':
+            case 'create': {
                 if (!email || !senha || !role) {
                     throw new functions.https.HttpsError('invalid-argument', 'Email, senha e role são obrigatórios');
                 }
@@ -34,8 +34,9 @@ exports.manageUser = functions.region('us-central1').https.onCall(async (data, c
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 });
                 return { success: true, uid: newUser.uid, email, role };
+            }
 
-            case 'updateRole':
+            case 'updateRole': {
                 if (!uid || !role) throw new functions.https.HttpsError('invalid-argument', 'UID e role obrigatórios');
                 if (uid === context.auth.uid) {
                     throw new functions.https.HttpsError('invalid-argument', 'Não pode alterar própria role');
@@ -46,8 +47,9 @@ exports.manageUser = functions.region('us-central1').https.onCall(async (data, c
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 });
                 return { success: true, uid, role };
+            }
 
-            case 'delete':
+            case 'delete': {
                 if (!uid) throw new functions.https.HttpsError('invalid-argument', 'UID obrigatório');
                 if (uid === context.auth.uid) {
                     throw new functions.https.HttpsError('invalid-argument', 'Não pode remover a si mesmo');
@@ -55,8 +57,9 @@ exports.manageUser = functions.region('us-central1').https.onCall(async (data, c
                 await admin.auth().deleteUser(uid);
                 await db.collection('users').doc(uid).delete();
                 return { success: true, uid };
+            }
 
-            case 'list':
+            case 'list': {
                 const snapshot = await db.collection('users').get();
                 const usuarios = snapshot.docs.map(doc => ({
                     uid: doc.id,
@@ -64,13 +67,17 @@ exports.manageUser = functions.region('us-central1').https.onCall(async (data, c
                     createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || null
                 }));
                 return { success: true, usuarios };
+            }
 
             default:
                 throw new functions.https.HttpsError('invalid-argument', 'Ação inválida');
         }
     } catch (error) {
+        // Não re-embalar HttpsError — deixar propagar com o código original
+        if (error instanceof functions.https.HttpsError) throw error;
+        // Erros inesperados: logar e retornar mensagem clara
         console.error('manageUser error:', error);
-        throw new functions.https.HttpsError('unknown', error.message);
+        throw new functions.https.HttpsError('internal', error.message || 'Erro interno no servidor');
     }
 });
 

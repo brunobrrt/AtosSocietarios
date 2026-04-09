@@ -101,7 +101,9 @@ async function criarNovoUsuario() {
         carregarListaUsuarios();
     } catch (error) {
         console.error('Erro ao criar usuário:', error);
-        alert('❌ Erro ao criar usuário: ' + error.message);
+        // error.message contém o código; error.details contém a mensagem real
+        const msg = error.details || error.message || 'Erro desconhecido';
+        alert('❌ Erro ao criar usuário: ' + msg);
     }
 }
 
