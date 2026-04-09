@@ -560,14 +560,14 @@ footer {
     border-radius: var(--radius-lg);
     max-width: 680px;
     width: 100%;
-    max-height: 88vh;
-    overflow-y: auto;
+    max-height: 90vh;
+    overflow: hidden;
     box-shadow: var(--shadow-lg);
     display: flex;
     flex-direction: column;
 }
 
-.modal-content.modal-large { max-width: 860px; }
+.modal-content.modal-large { max-width: 860px; max-height: 92vh; }
 .modal-content.modal-sm    { max-width: 480px; }
 
 .modal-header {
@@ -609,7 +609,7 @@ footer {
 
 .btn-close:hover { background: rgba(255,255,255,.28); }
 
-.modal-body { padding: 26px 28px; flex: 1; }
+.modal-body { padding: 26px 28px; flex: 1; overflow-y: auto; min-height: 0; }
 
 /*  Seções dentro do modal  */
 .modal-section { margin-bottom: 20px; }
