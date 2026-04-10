@@ -102,6 +102,14 @@
             </div>
             <div class="topbar-user">
                 <span id="user-info" class="user-email" style="display:none; margin-right:10px;"></span>
+
+                <!-- SINO DE NOTIFICAÇÕES (só painel) -->
+                <div class="notif-bell-wrap" id="notif-bell-wrap" style="display:none;">
+                    <button id="btn-notificacoes" class="btn-notif-bell" onclick="togglePainelNotificacoes()" title="Notificações">
+                        🔔
+                        <span id="notif-badge" class="notif-badge" style="display:none;">0</span>
+                    </button>
+                </div>
                 <button id="btn-login" class="btn-topbar-gold" onclick="abrirModalLogin()">🔐 Login</button>
                 <button id="btn-logout" class="btn-topbar-gold" onclick="handleLogout()" style="display:none;">🚪 Sair</button>
                 <button class="btn-topbar-gold admin-only no-viewer" onclick="abrirModalNovoProcesso()">➕ Novo Processo</button>
@@ -156,7 +164,17 @@
                     <span class="dash-card-number" id="dash-pendentes">0</span>
                     <span class="dash-card-label">Pendentes</span>
                 </div>
+                <div class="dash-card alertas" id="card-alertas" onclick="document.getElementById('secao-alertas').scrollIntoView({behavior:'smooth'})" style="cursor:pointer;">
+                    <span class="dash-card-number" id="dash-alertas">0</span>
+                    <span class="dash-card-label">Alertas de Prazo</span>
+                </div>
             </div>
+            <!-- ALERTAS DE PRAZO -->
+            <div id="secao-alertas" style="margin-bottom:24px;">
+                <h3 style="color:var(--danger);margin-bottom:12px;font-size:0.95rem;font-weight:700;">⚠️ Alertas de Prazo</h3>
+                <div id="dashboard-alertas"><div class="alertas-ok">✅ Todos os prazos estão em dia</div></div>
+            </div>
+
             <h3 style="color:var(--navy);margin-bottom:16px;font-size:0.95rem;">Processos Recentes</h3>
             <div id="processos-recentes"></div>
         </section>
@@ -557,6 +575,22 @@
         </div>
     </div>
 
+    <!-- PAINEL DE NOTIFICAÇÕES (overlay + drawer) -->
+    <div id="notif-overlay" class="notif-overlay" onclick="fecharPainelNotificacoes()"></div>
+    <div id="painel-notificacoes" class="notif-painel">
+        <div class="notif-painel-header">
+            <span class="notif-painel-titulo">🔔 Notificações</span>
+            <div style="display:flex;gap:6px;align-items:center;">
+                <button id="btn-som-notif" class="notif-btn-icon" onclick="toggleSomNotificacoes()" title="Ativar/desativar som">🔔</button>
+                <button class="notif-btn-text" onclick="marcarTodasLidas()">Marcar todas como lidas</button>
+                <button class="notif-painel-close" onclick="fecharPainelNotificacoes()">×</button>
+            </div>
+        </div>
+        <div id="notif-lista" class="notif-lista">
+            <div class="notif-empty">🔔 Nenhuma notificação ainda</div>
+        </div>
+    </div>
+
     <!-- Firebase SDKs (compatibilidade) -->
     <!-- Firebase SDKs (compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -568,5 +602,7 @@
     <!-- Módulos ES6 -->
     <script src="auth.js"></script>
     <script src="user-management.js"></script>
+    <script src="notifications.js"></script>
+    <script src="deadlines.js"></script>
     <script src="app.js"></script>
 </body>

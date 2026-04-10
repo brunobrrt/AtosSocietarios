@@ -1272,3 +1272,354 @@ hr { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
     .topbar-user { flex-wrap: wrap; gap: 8px; }
     .btn-topbar-gold { padding: 8px 12px; font-size: 0.85rem; }
 }
+
+/* ============================================================
+   NOTIFICAÇÕES & PRAZOS — estilos
+   ============================================================ */
+
+/* ── Sino na topbar ─────────────────────────────────────────── */
+.notif-bell-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-notif-bell {
+    position: relative;
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.25);
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    color: #fff;
+}
+.btn-notif-bell:hover,
+.btn-notif-bell.has-notif {
+    background: rgba(184,134,11,0.25);
+    border-color: var(--gold);
+}
+
+.notif-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #dc3545;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--navy);
+    pointer-events: none;
+}
+
+/* ── Overlay + Painel deslizante ────────────────────────────── */
+.notif-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,20,40,0.35);
+    z-index: 4000;
+}
+.notif-overlay.open { display: block; }
+
+.notif-painel {
+    position: fixed;
+    top: 0;
+    right: -380px;
+    width: 360px;
+    max-width: 95vw;
+    height: 100%;
+    background: var(--white);
+    box-shadow: -4px 0 32px rgba(26,46,74,0.18);
+    z-index: 4001;
+    display: flex;
+    flex-direction: column;
+    transition: right 0.3s ease;
+    border-left: 3px solid var(--gold);
+}
+.notif-painel.open { right: 0; }
+
+.notif-painel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    border-bottom: 1.5px solid var(--border);
+    background: var(--navy);
+    color: #fff;
+    flex-shrink: 0;
+}
+.notif-painel-titulo {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: .3px;
+}
+
+.notif-painel-close {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    font-size: 1.4rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+    transition: color 0.15s;
+}
+.notif-painel-close:hover { color: #fff; }
+
+.notif-btn-text {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.85);
+    font-size: 0.72rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .15s;
+    white-space: nowrap;
+}
+.notif-btn-text:hover { background: rgba(255,255,255,0.1); }
+
+.notif-btn-icon {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.85);
+    font-size: 0.9rem;
+    padding: 4px 7px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .15s;
+}
+.notif-btn-icon:hover { background: rgba(255,255,255,0.1); }
+
+/* ── Lista de notificações ──────────────────────────────────── */
+.notif-lista {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.notif-empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-light);
+    font-size: 0.88rem;
+}
+
+.notif-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+    position: relative;
+}
+.notif-item:hover { background: var(--surface); }
+.notif-item.lida   { opacity: 0.55; }
+.notif-item.lida .notif-dot { background: transparent; border: 2px solid #ccc; }
+
+.notif-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+    background: var(--accent);
+}
+.notif-item.notif-tipo-form     .notif-dot { background: #1e6e45; }
+.notif-item.notif-tipo-etapa    .notif-dot { background: var(--accent); }
+.notif-item.notif-tipo-warning  .notif-dot { background: #856404; }
+.notif-item.notif-tipo-danger   .notif-dot { background: #922b21; }
+.notif-item.notif-tipo-critical .notif-dot { background: #922b21; animation: notif-pulse 1.2s infinite; }
+
+.notif-content { flex: 1; min-width: 0; }
+
+.notif-titulo {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.notif-corpo {
+    font-size: 0.78rem;
+    color: var(--text-mid);
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.notif-ts {
+    font-size: 0.7rem;
+    color: var(--text-light);
+}
+
+/* ── Toasts flutuantes ──────────────────────────────────────── */
+#notif-toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10100;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    max-width: 340px;
+}
+
+.notif-toast {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    border-left: 4px solid var(--accent);
+    font-size: 0.83rem;
+    pointer-events: all;
+    animation: notifToastIn 0.35s ease;
+    position: relative;
+}
+.notif-toast.removing { animation: notifToastOut 0.35s ease forwards; }
+
+.notif-toast.notif-tipo-form     { border-left-color: #1e6e45; }
+.notif-toast.notif-tipo-warning  { border-left-color: #856404; }
+.notif-toast.notif-tipo-danger   { border-left-color: #922b21; }
+.notif-toast.notif-tipo-critical { border-left-color: #922b21; animation: notifToastIn 0.35s ease, notif-pulse-border 1.5s infinite; }
+
+.notif-toast-body  { flex: 1; min-width: 0; }
+.notif-toast-titulo { font-weight: 700; color: var(--text-dark); margin-bottom: 3px; }
+.notif-toast-corpo  { color: var(--text-mid); line-height: 1.4; }
+
+.notif-toast-close {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--text-light);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 2px;
+    flex-shrink: 0;
+    align-self: flex-start;
+    pointer-events: all;
+}
+.notif-toast-close:hover { color: var(--text-dark); }
+
+@keyframes notifToastIn {
+    from { opacity: 0; transform: translateX(60px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes notifToastOut {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(60px); }
+}
+
+/* ── Badges de prazo (pipeline + cards) ─────────────────────── */
+.prazo-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    margin-left: 6px;
+    white-space: nowrap;
+    vertical-align: middle;
+    letter-spacing: .2px;
+}
+.prazo-badge.prazo-warning  { background: #fff3cd; color: #856404; border: 1px solid #f0c000; }
+.prazo-badge.prazo-danger   { background: #fdecea; color: #922b21; border: 1px solid #f5a5a0; }
+.prazo-badge.prazo-critical {
+    background: #922b21;
+    color: #fff;
+    border: 1px solid #7a2118;
+    animation: prazo-pulse 1.3s ease-in-out infinite;
+}
+
+/* ── Alertas no dashboard ───────────────────────────────────── */
+.alertas-ok {
+    padding: 12px 16px;
+    font-size: 0.84rem;
+    color: var(--success);
+    background: var(--success-bg);
+    border-radius: var(--radius);
+    border: 1px solid #b7dfc8;
+}
+
+.alerta-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: filter 0.15s;
+    border: 1px solid transparent;
+}
+.alerta-item:hover { filter: brightness(0.96); }
+
+.alerta-item.alerta-warning  { background: #fff9e6; border-color: #f0c000; }
+.alerta-item.alerta-danger   { background: #fff0ef; border-color: #f5a5a0; }
+.alerta-item.alerta-critical {
+    background: #fdecea;
+    border-color: #922b21;
+    animation: prazo-pulse 1.5s ease-in-out infinite;
+}
+
+.alerta-icone { font-size: 1.3rem; flex-shrink: 0; }
+
+.alerta-body .alerta-titulo {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+.alerta-body .alerta-detalhe {
+    font-size: 0.76rem;
+    color: var(--text-mid);
+    margin-top: 2px;
+}
+
+/* ── Card de alertas no dashboard ───────────────────────────── */
+.dash-card.alertas {
+    border-top: 4px solid #e0e0e0;
+}
+.dash-card.alertas.aviso  { border-top-color: #f0c000; }
+.dash-card.alertas.urgente {
+    border-top-color: #922b21;
+    animation: prazo-pulse 1.5s ease-in-out infinite;
+}
+
+/* ── Animações ──────────────────────────────────────────────── */
+@keyframes notif-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.35; }
+}
+
+@keyframes prazo-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(146,43,33,0); }
+    50%       { box-shadow: 0 0 0 5px rgba(146,43,33,0.18); }
+}
+
+@keyframes notif-pulse-border {
+    0%, 100% { border-left-color: #922b21; }
+    50%       { border-left-color: #c0392b; }
+}
+

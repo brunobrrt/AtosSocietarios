@@ -297,6 +297,15 @@ async function carregarPainel() {
     mostrarView('view-painel');
     aplicarRestricoesUI();
     if (unsubscribePainel) unsubscribePainel();
+
+    // Exibir sino de notificações na topbar do painel
+    const bellWrap = document.getElementById('notif-bell-wrap');
+    if (bellWrap) bellWrap.style.display = '';
+
+    // Iniciar notificações e controle de prazos
+    if (typeof inicializarNotificacoes === 'function') inicializarNotificacoes();
+    if (typeof iniciarVerificacaoPrazos  === 'function') iniciarVerificacaoPrazos();
+
     unsubscribePainel = escutarProcessos(lista => {
         processos = lista;
         renderizarPainel();
@@ -309,6 +318,8 @@ function pararPainel() {
         unsubscribePainel = null;
     }
     processos = [];
+    if (typeof pararNotificacoes    === 'function') pararNotificacoes();
+    if (typeof pararVerificacaoPrazos === 'function') pararVerificacaoPrazos();
 }
 
 function renderizarPainel() {
@@ -316,6 +327,7 @@ function renderizarPainel() {
     renderizarLista('abertura', 'lista-aberturas');
     renderizarLista('alteracao', 'lista-alteracoes');
     renderizarLista('encerramento', 'lista-encerramentos');
+    if (typeof renderizarAlertasPrazos === 'function') renderizarAlertasPrazos(processos);
 }
 
 function aplicarFiltro() {
@@ -476,8 +488,16 @@ async function avancarEtapa(processoId, etapaId, novoStatus) {
         }
     }
 
-    processo.etapas[etapaId].status = novoStatus;
-    processo.etapas[etapaId].data = new Date().toISOString();
+    // Calcular prazo se iniciando etapa e mesclar com dados existentes
+    const _dadosPrazo = typeof calcularDadosPrazo === 'function'
+        ? calcularDadosPrazo(processo.tipo, etapaId, novoStatus)
+        : {};
+    processo.etapas[etapaId] = {
+        ...processo.etapas[etapaId],
+        status: novoStatus,
+        data: new Date().toISOString(),
+        ..._dadosPrazo
+    };
     processo.atualizadoEm = new Date().toISOString();
 
     // Verificar se concluiu
@@ -495,6 +515,15 @@ async function avancarEtapa(processoId, etapaId, novoStatus) {
         console.error('Erro ao atualizar etapa:', e);
         showToast('Erro ao salvar. Tente novamente.');
         return;
+    }
+
+    // Notificar contabilidade sobre mudança de etapa
+    if (typeof criarNotificacaoEtapaAtualizada === 'function') {
+        criarNotificacaoEtapaAtualizada(processo, etapaId, novoStatus);
+    }
+    // Enviar WhatsApp ao cliente quando etapa é concluída
+    if (typeof notificarClienteEtapaWhatsApp === 'function') {
+        notificarClienteEtapaWhatsApp(processo, etapaId, novoStatus);
     }
 
     abrirDetalheProcesso(processoId);
@@ -1009,6 +1038,11 @@ async function salvarFormularioCliente() {
         localStorage.setItem('demo-arquivos-' + processoAtual.id, JSON.stringify(demoArquivos));
     }
 
+    // Notificar contabilidade em tempo real
+    if (typeof criarNotificacaoFormPreenchido === 'function') {
+        criarNotificacaoFormPreenchido(processoAtual);
+    }
+
     // Limpar arquivos pendentes
     arquivosUpload = { iptu: [], docs: [] };
 
@@ -1080,12 +1114,15 @@ function renderizarPipeline(processo, containerId, editavel) {
     const container = document.getElementById(containerId);
 
     container.innerHTML = etapasConfig.map((etapa, i) => {
-        const estado = processo.etapas?.[etapa.id]?.status || 'pendente';
-        const isLast = i === etapasConfig.length - 1;
+        const estado    = processo.etapas?.[etapa.id]?.status || 'pendente';
+        const isLast    = i === etapasConfig.length - 1;
+        const prazoBadge = typeof renderizarBadgePrazo === 'function'
+            ? renderizarBadgePrazo(processo.etapas?.[etapa.id])
+            : '';
         return `
             <div class="etapa">
                 <div class="etapa-circle ${estado}">${estado === 'concluido' ? '✓' : (i + 1)}</div>
-                <span class="etapa-label">${etapa.label}</span>
+                <span class="etapa-label">${etapa.label}${prazoBadge}</span>
             </div>
             ${!isLast ? `<div class="etapa-connector ${estado === 'concluido' ? 'concluido' : ''}"></div>` : ''}
         `;
@@ -1321,11 +1358,25 @@ function criarCardProcesso(processo) {
     const nome = processo.dados?.razaoSocial || processo.clienteNome || 'Sem nome';
     const preenchido = processo.preenchidoEm ? '' : ' <span style="color:var(--warning);font-size:0.72rem;">⏳ Aguardando preenchimento</span>';
 
+    // Badge de prazo da etapa em andamento
+    let prazoBadgeCard = '';
+    if (typeof renderizarBadgePrazo === 'function') {
+        const etapasConf = ETAPAS_POR_TIPO[processo.tipo] || [];
+        for (const ec of etapasConf) {
+            const etapaObj = processo.etapas?.[ec.id];
+            if (etapaObj?.status === 'em-andamento') {
+                prazoBadgeCard = renderizarBadgePrazo(etapaObj);
+                break;
+            }
+        }
+    }
+
     return `
         <div class="processo-card" onclick="abrirDetalheProcesso('${processo.id}')">
             <div class="processo-header">
                 <span class="processo-tipo ${processo.tipo}">${TIPOS_LABEL[processo.tipo]}</span>
                 <span class="processo-status ${statusGeral}">${statusLabel[statusGeral]}</span>
+                ${prazoBadgeCard}
             </div>
             <div class="processo-empresa">${nome}${preenchido}</div>
             <div class="processo-meta">
