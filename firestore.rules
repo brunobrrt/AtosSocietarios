@@ -14,7 +14,28 @@ service cloud.firestore {
     // Coleção principal de processos
     match /atos-societarios/{processoId} {
       allow read: if true;
-      allow write: if isAdmin();
+      // Admin pode criar, excluir e atualizar qualquer campo
+      allow create, delete: if isAdmin();
+      // Admin pode atualizar qualquer campo; cliente sem autenticação pode
+      // atualizar apenas os campos do formulário, uma única vez
+      // (formLinkUsado != true impede re-uso do link de edição)
+      allow update: if isAdmin() || (
+        resource.data.formLinkUsado != true &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'dados', 'socios', 'preenchidoEm', 'atualizadoEm',
+          'formLinkUsado', 'formLinkUsadoEm', 'etapas', 'arquivos', 'status'
+        ])
+      );
+    }
+
+    // Coleção de notificações internas
+    match /notificacoes/{notifId} {
+      // Qualquer origem (incluindo cliente não autenticado) pode criar
+      allow create: if true;
+      // Apenas usuários autenticados (contabilidade) podem ler e marcar como lida
+      allow read, update: if request.auth != null;
+      // Apenas admin pode excluir
+      allow delete: if isAdmin();
     }
 
     // Coleção de usuários
