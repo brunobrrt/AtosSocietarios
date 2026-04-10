@@ -17,11 +17,13 @@ function inicializarNotificacoes() {
 
     unsubscribeNotificacoes = db.collection(NOTIF_COLLECTION)
         .where('destinatario', '==', 'contabilidade')
-        .orderBy('criadoEm', 'desc')
         .limit(50)
         .onSnapshot(snap => {
             const anterior = _notificacoesCache.map(n => n.id);
-            _notificacoesCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            // Ordenar client-side para evitar exigência de índice composto
+            const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            docs.sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
+            _notificacoesCache = docs;
 
             atualizarBadgeNotificacoes();
             renderizarPainelNotificacoes();
