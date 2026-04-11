@@ -1649,20 +1649,23 @@ async function gerarNovoLinkForm() {
     showToast('Novo link de edição gerado! Copie e envie ao cliente. ✅');
 }
 
-function enviarLinksWhatsApp() {
-    // Pega os links direto dos inputs (mesma lógica dos botões Copiar que funcionam)
-    const linkForm = document.getElementById('detalhe-link-form')?.value
-        || document.getElementById('link-gerado-form')?.value
-        || '';
-    const linkStatus = document.getElementById('detalhe-link-status')?.value
-        || document.getElementById('link-gerado-status')?.value
-        || '';
-    const cliente = window._linksParaEnviar?.cliente
-        || window._linksParaEnviarDetalhe?.cliente
-        || '';
-    const tipo = window._linksParaEnviar?.tipo
-        || window._linksParaEnviarDetalhe?.tipo
-        || 'ato societário';
+function enviarLinksWhatsApp(fonte) {
+    // fonte: 'novo' = modal pós-criação | 'detalhe' = modal de detalhe
+    let linkForm, linkStatus, cliente, tipo;
+
+    if (fonte === 'novo') {
+        linkForm   = document.getElementById('link-gerado-form')?.value   || '';
+        linkStatus = document.getElementById('link-gerado-status')?.value || '';
+        cliente    = window._linksParaEnviar?.cliente || '';
+        tipo       = window._linksParaEnviar?.tipo    || 'ato societário';
+    } else {
+        linkForm   = document.getElementById('detalhe-link-form')?.value   || '';
+        linkStatus = document.getElementById('detalhe-link-status')?.value || '';
+        const p    = window._processoDetalhe;
+        cliente    = p?.clienteNome || window._linksParaEnviarDetalhe?.cliente || '';
+        tipo       = (p?.tipo ? (TIPOS_LABEL[p.tipo] || p.tipo) : null)
+                     || window._linksParaEnviarDetalhe?.tipo || 'ato societário';
+    }
 
     const msg = `Olá${cliente ? ' ' + cliente : ''}! Seu processo de ${tipo} foi criado.
 ` +
