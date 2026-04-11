@@ -422,10 +422,19 @@
                 <div class="modal-section">
                     <h3>Referência</h3>
                     <div class="form-row">
-                        <div class="form-field">
-                            <label>Nome do Cliente / Empresa <span class="required">*</span></label>
-                            <input type="text" id="processo-cliente-nome" placeholder="Nome para identificação interna">
+                        <div class="form-field" style="position:relative;">
+                            <label id="label-cliente-nome">Nome do Cliente / Empresa <span class="required">*</span></label>
+                            <input type="text" id="processo-cliente-nome"
+                                   placeholder="Nome para identificação interna"
+                                   oninput="onClienteNomeInput(this.value)"
+                                   autocomplete="off">
+                            <!-- Dropdown de sugestões (visível só para Alteração) -->
+                            <div id="empresa-sugestoes" class="empresa-sug-dropdown" style="display:none;"></div>
                         </div>
+                    </div>
+                    <!-- Hint exibido quando empresa não é encontrada -->
+                    <div id="hint-empresa-nova" class="empresa-hint-nova" style="display:none;">
+                        ✨ Empresa não encontrada no sistema — será cadastrada como nova.
                     </div>
                 </div>
 

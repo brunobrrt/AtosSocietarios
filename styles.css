@@ -1645,3 +1645,77 @@ hr { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
     50%       { border-left-color: #c0392b; }
 }
 
+/* ── Busca de empresa (modal Novo Processo — Alteração) ───── */
+.empresa-sug-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    z-index: 9999;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.empresa-sug-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s;
+}
+.empresa-sug-item:last-child { border-bottom: none; }
+.empresa-sug-item:hover { background: #f0f4ff; }
+
+.sug-nome {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 2px;
+}
+
+.sug-razao {
+    display: block;
+    font-size: 0.76rem;
+    color: var(--text-mid);
+    margin-bottom: 4px;
+}
+
+.sug-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.sug-tipo {
+    font-size: 0.7rem;
+    background: #e8eeff;
+    color: var(--primary);
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.sug-status {
+    font-size: 0.7rem;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+.sug-status-pendente    { background: #f5f5f5; color: #666; }
+.sug-status-em-andamento{ background: #fff3cd; color: #856404; }
+.sug-status-concluido   { background: #d1e7dd; color: #0f5132; }
+
+.empresa-hint-nova {
+    margin-top: 8px;
+    font-size: 0.78rem;
+    color: var(--primary);
+    background: #f0f4ff;
+    border: 1px dashed var(--primary);
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+

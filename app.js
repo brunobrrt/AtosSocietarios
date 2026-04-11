@@ -340,6 +340,11 @@ function abrirModalNovoProcesso(tipo) {
     document.getElementById('processo-tipo').value = tipo || '';
     document.getElementById('processo-cliente-nome').value = '';
     document.getElementById('processo-subtipo').selectedIndex = 0;
+    // Limpar estado da busca de empresa
+    const sugEl  = document.getElementById('empresa-sugestoes');
+    const hintEl = document.getElementById('hint-empresa-nova');
+    if (sugEl)  sugEl.style.display  = 'none';
+    if (hintEl) hintEl.style.display = 'none';
     atualizarFormularioProcesso();
 }
 
@@ -350,7 +355,109 @@ function fecharModalNovoProcesso() {
 function atualizarFormularioProcesso() {
     const tipo = document.getElementById('processo-tipo').value;
     document.getElementById('campo-tipo-alteracao').style.display = tipo === 'alteracao' ? 'block' : 'none';
+
+    const labelEl = document.getElementById('label-cliente-nome');
+    const inputEl = document.getElementById('processo-cliente-nome');
+    const sugEl   = document.getElementById('empresa-sugestoes');
+    const hintEl  = document.getElementById('hint-empresa-nova');
+
+    if (tipo === 'alteracao') {
+        if (labelEl) labelEl.innerHTML = 'Empresa <span class="required">*</span>';
+        if (inputEl) inputEl.placeholder = 'Digite para buscar empresa cadastrada...';
+    } else {
+        if (labelEl) labelEl.innerHTML = 'Nome do Cliente / Empresa <span class="required">*</span>';
+        if (inputEl) inputEl.placeholder = 'Nome para identificação interna';
+        if (sugEl)   sugEl.style.display  = 'none';
+        if (hintEl)  hintEl.style.display = 'none';
+    }
 }
+
+// ─── BUSCA DE EMPRESA PARA ALTERAÇÃO ────────────────────────
+
+function onClienteNomeInput(value) {
+    const tipo = document.getElementById('processo-tipo')?.value;
+    if (tipo !== 'alteracao') return; // só aplica autocomplete em alterações
+    mostrarSugestoesEmpresa(value);
+}
+
+function mostrarSugestoesEmpresa(query) {
+    const container = document.getElementById('empresa-sugestoes');
+    const hintEl    = document.getElementById('hint-empresa-nova');
+    if (!container) return;
+
+    if (!query || query.length < 2) {
+        container.style.display = 'none';
+        if (hintEl) hintEl.style.display = 'none';
+        return;
+    }
+
+    const q = query.toLowerCase();
+
+    // Deduplica por clienteNome, mantém o processo mais recente por empresa
+    const mapa = new Map();
+    processos.forEach(p => {
+        const nome   = (p.clienteNome || '').trim();
+        const razao  = (p.dados?.razaoSocial || '').trim();
+        if (!nome) return;
+        const buscavel = (nome + ' ' + razao).toLowerCase();
+        if (!buscavel.includes(q)) return;
+        const chave = nome.toLowerCase();
+        const existente = mapa.get(chave);
+        if (!existente || new Date(p.criadoEm) > new Date(existente.criadoEm)) {
+            mapa.set(chave, p);
+        }
+    });
+
+    const resultados = Array.from(mapa.values()).slice(0, 8);
+
+    if (resultados.length === 0) {
+        container.style.display = 'none';
+        if (hintEl) {
+            hintEl.style.display = 'block';
+        }
+        return;
+    }
+
+    if (hintEl) hintEl.style.display = 'none';
+
+    const statusLabel = { 'pendente': 'Pendente', 'em-andamento': 'Em andamento', 'concluido': 'Concluído' };
+    container.innerHTML = resultados.map(p => {
+        const nome  = p.clienteNome || '';
+        const razao = p.dados?.razaoSocial ? `<span class="sug-razao">${p.dados.razaoSocial}</span>` : '';
+        const tipo  = TIPOS_LABEL[p.tipo] || p.tipo;
+        const st    = p.status || 'pendente';
+        const stLbl = statusLabel[st] || st;
+        const nomeSafe = nome.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        return `
+        <div class="empresa-sug-item" onmousedown="selecionarEmpresaSugerida('${nomeSafe}')">
+            <div class="sug-nome">${nome}</div>
+            ${razao}
+            <div class="sug-meta">
+                <span class="sug-tipo">${tipo}</span>
+                <span class="sug-status sug-status-${st}">${stLbl}</span>
+            </div>
+        </div>`;
+    }).join('');
+
+    container.style.display = 'block';
+}
+
+function selecionarEmpresaSugerida(nome) {
+    const input = document.getElementById('processo-cliente-nome');
+    if (input) input.value = nome;
+    const sugEl  = document.getElementById('empresa-sugestoes');
+    const hintEl = document.getElementById('hint-empresa-nova');
+    if (sugEl)  sugEl.style.display  = 'none';
+    if (hintEl) hintEl.style.display = 'none';
+}
+
+// Fechar sugestões se clicar fora do campo
+document.addEventListener('click', e => {
+    if (!e.target.closest('#processo-cliente-nome') && !e.target.closest('#empresa-sugestoes')) {
+        const sugEl = document.getElementById('empresa-sugestoes');
+        if (sugEl) sugEl.style.display = 'none';
+    }
+});
 
 // Criar processo (contabilidade)
 async function criarProcesso() {
