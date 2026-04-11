@@ -161,6 +161,43 @@ async function marcarTodasLidas() {
     }
 }
 
+// ─── APAGAR NOTIFICAÇÕES (somente admin) ─────────────────────
+
+async function apagarNotificacao(id) {
+    if (!db) return;
+    if (typeof window.isAdmin !== 'function' || !window.isAdmin()) {
+        if (typeof showToast === 'function') showToast('Sem permissão para apagar notificações');
+        return;
+    }
+    try {
+        await db.collection(NOTIF_COLLECTION).doc(id).delete();
+    } catch (e) {
+        console.error('Erro ao apagar notificação:', e);
+        if (typeof showToast === 'function') showToast('Erro ao apagar notificação');
+    }
+}
+
+async function apagarTodasNotificacoes() {
+    if (!db) return;
+    if (typeof window.isAdmin !== 'function' || !window.isAdmin()) {
+        if (typeof showToast === 'function') showToast('Sem permissão para apagar notificações');
+        return;
+    }
+    if (_notificacoesCache.length === 0) return;
+    if (!confirm(`Apagar ${_notificacoesCache.length} notificação(ões)? Esta ação não pode ser desfeita.`)) return;
+    const batch = db.batch();
+    _notificacoesCache.forEach(n => {
+        batch.delete(db.collection(NOTIF_COLLECTION).doc(n.id));
+    });
+    try {
+        await batch.commit();
+        if (typeof showToast === 'function') showToast('Notificações apagadas');
+    } catch (e) {
+        console.error('Erro ao apagar todas as notificações:', e);
+        if (typeof showToast === 'function') showToast('Erro ao apagar notificações');
+    }
+}
+
 // ─── UI: BADGE DO SINO ───────────────────────────────────────
 
 function atualizarBadgeNotificacoes() {
@@ -207,6 +244,14 @@ function renderizarPainelNotificacoes() {
     const lista = document.getElementById('notif-lista');
     if (!lista) return;
 
+    const ehAdmin = typeof window.isAdmin === 'function' && window.isAdmin();
+
+    // Mostrar/ocultar botão "Apagar tudo" no header
+    const btnApagarTodas = document.getElementById('btn-apagar-todas-notif');
+    if (btnApagarTodas) {
+        btnApagarTodas.style.display = ehAdmin && _notificacoesCache.length > 0 ? '' : 'none';
+    }
+
     if (_notificacoesCache.length === 0) {
         lista.innerHTML = `<div class="notif-empty">🔔 Nenhuma notificação ainda</div>`;
         return;
@@ -216,6 +261,9 @@ function renderizarPainelNotificacoes() {
         const ts      = n.criadoEm ? _formatarTimestampRelativo(n.criadoEm) : '';
         const lidaCls = n.lida ? ' lida' : '';
         const tipoCls = _notifTipoCss(n);
+        const deleteBtnHtml = ehAdmin
+            ? `<button class="notif-item-delete" onclick="event.stopPropagation();apagarNotificacao('${n.id}')" title="Apagar notificação">🗑</button>`
+            : '';
 
         return `
         <div class="notif-item${lidaCls} notif-tipo-${tipoCls}"
@@ -227,6 +275,7 @@ function renderizarPainelNotificacoes() {
                 <div class="notif-corpo">${n.corpo}</div>
                 <div class="notif-ts">${ts}</div>
             </div>
+            ${deleteBtnHtml}
         </div>`;
     }).join('');
 }

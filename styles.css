@@ -1392,6 +1392,12 @@ hr { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
 }
 .notif-btn-text:hover { background: rgba(255,255,255,0.1); }
 
+.notif-btn-danger {
+    border-color: rgba(255,80,80,0.5);
+    color: rgba(255,160,160,0.9);
+}
+.notif-btn-danger:hover { background: rgba(255,80,80,0.18); }
+
 .notif-btn-icon {
     background: transparent;
     border: 1px solid rgba(255,255,255,0.3);
@@ -1447,6 +1453,22 @@ hr { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
 .notif-item.notif-tipo-critical .notif-dot { background: #922b21; animation: notif-pulse 1.2s infinite; }
 
 .notif-content { flex: 1; min-width: 0; }
+
+.notif-item-delete {
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    color: var(--text-light);
+    font-size: 0.85rem;
+    padding: 4px 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .15s, background .15s, color .15s;
+    align-self: flex-start;
+}
+.notif-item:hover .notif-item-delete { opacity: 1; }
+.notif-item-delete:hover { background: rgba(220,53,69,0.12); color: #c0392b; }
 
 .notif-titulo {
     font-size: 0.84rem;
